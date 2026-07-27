@@ -1,41 +1,65 @@
-# Football Field Booking & Management System
+# FootballBooking
 
-Hệ thống quản lý và đặt sân bóng mini dành cho một cơ sở kinh doanh sân bóng. Khách có thể xem lịch trống và đặt sân trực tuyến; chủ sân và nhân viên sử dụng khu vực nội bộ để quản lý sân, booking, thanh toán, dịch vụ và báo cáo.
+Hệ thống quản lý và đặt sân bóng mini được xây dựng bằng ASP.NET Core MVC.
+
+Ứng dụng phục vụ đồng thời khách hàng, nhân viên vận hành và chủ sân. Khách có thể xem sân, kiểm tra lịch trống và đặt sân trực tuyến; khu vực nội bộ hỗ trợ quản lý lịch sân, booking, thanh toán, dịch vụ và báo cáo.
 
 ## Chức năng chính
 
-### Website khách hàng
+### Khách hàng
 
-- Xem danh sách và chi tiết sân.
-- Xem giá và khung giờ còn trống.
-- Đặt sân không cần tài khoản.
-- Đăng ký tài khoản khách nếu muốn lưu lịch sử.
-- Chọn dịch vụ đi kèm và mã giảm giá.
-- Thanh toán hoặc đặt cọc.
-- Nhận và tra cứu mã booking.
-- Hủy booking theo chính sách.
+- Xem danh sách sân bóng.
+- Xem thông tin chi tiết từng sân.
+- Kiểm tra ngày và khung giờ còn trống.
+- Đặt sân không cần đăng nhập.
+- Chọn dịch vụ đi kèm.
+- Áp dụng mã khuyến mãi.
+- Nhận mã booking sau khi đặt sân.
+- Tra cứu booking bằng mã đặt sân và số điện thoại.
+- Hủy booking theo chính sách của hệ thống.
+- Theo dõi số tiền đã thanh toán và số tiền còn lại.
 
-### Khu vực nội bộ
+### Nhân viên
 
-- Hai vai trò: `Owner` và `Staff`.
-- Quản lý sân, giờ hoạt động, bảng giá và bảo trì.
-- Quản lý lịch sân và chống trùng booking.
-- Tạo booking hộ khách.
-- Quản lý thanh toán, dịch vụ và khuyến mãi.
-- Dashboard, báo cáo CSV và nhật ký hoạt động.
+- Xem lịch hoạt động của các sân.
+- Tạo booking trực tiếp cho khách.
+- Theo dõi booking chờ cọc và booking đã xác nhận.
+- Ghi nhận tiền cọc và thanh toán.
+- Check-in khách hàng.
+- Cập nhật trạng thái booking.
+- Thêm dịch vụ phát sinh.
+- Xử lý khách không đến.
+- Theo dõi các booking cần xử lý trong ngày.
 
-## Tech stack
+### Chủ sân
+
+Chủ sân có toàn bộ quyền của nhân viên và các chức năng bổ sung:
+
+- Quản lý sân bóng.
+- Quản lý giờ hoạt động.
+- Quản lý thời gian khóa sân và bảo trì.
+- Quản lý bảng giá.
+- Quản lý dịch vụ.
+- Quản lý mã khuyến mãi.
+- Quản lý tài khoản nhân viên.
+- Xem dashboard doanh thu.
+- Xem báo cáo booking.
+- Xem hiệu suất sử dụng sân.
+- Xuất báo cáo CSV.
+- Theo dõi nhật ký hoạt động.
+
+## Công nghệ sử dụng
 
 ### Backend
 
-- .NET 10 LTS
+- .NET 10
 - C#
-- ASP.NET Core MVC 10
+- ASP.NET Core MVC
 - ASP.NET Core Areas
 - ASP.NET Core Identity
 - Entity Framework Core 10
-- System.Text.Json
 - LINQ
+- System.Text.Json
 
 ### Frontend
 
@@ -48,220 +72,422 @@ Hệ thống quản lý và đặt sân bóng mini dành cho một cơ sở kinh
 - Chart.js
 - Heroicons
 
-### Data
+### Dữ liệu
 
-- SQLite: dữ liệu nghiệp vụ chính.
-- JSON: cấu hình, seed, import/export và API response.
+- SQLite
+- Entity Framework Core Migrations
+- JSON cho cấu hình, dữ liệu mẫu và API response
 
 ### Kiểm thử
 
 - xUnit
-- ASP.NET Core integration testing
+- ASP.NET Core Integration Testing
+- Microsoft.AspNetCore.Mvc.Testing
 
-## Cấu trúc solution dự kiến
+## Kiến trúc dự án
 
+Dự án được tổ chức theo mô hình Modular Monolith với các project riêng biệt:
 
+```text
 FootballBooking/
-├── AGENTS.md
-├── README.md
-├── TASKS.md
-├── docs/
-│   ├── PROJECT_SPEC.md
-│   ├── ARCHITECTURE.md
-│   ├── DATABASE.md
-│   ├── BUSINESS_RULES.md
-│   ├── UI_ROUTES.md
-│   ├── TESTING.md
-│   ├── IMPLEMENTATION_PLAN.md
-│   └── SETUP_AND_RUN.md
 ├── src/
 │   ├── FootballBooking.Web/
 │   ├── FootballBooking.Application/
 │   ├── FootballBooking.Domain/
 │   └── FootballBooking.Infrastructure/
-└── tests/
-    └── FootballBooking.Tests/
+├── tests/
+│   └── FootballBooking.Tests/
+├── docs/
+├── FootballBooking.slnx
+├── package.json
+├── package-lock.json
+└── README.md
+```
 
+### Vai trò của từng project
 
-## URL chính
+| Project | Chức năng |
+|---|---|
+| `FootballBooking.Web` | Controller, Razor View, ViewModel, route và giao diện |
+| `FootballBooking.Application` | Service, DTO, interface và nghiệp vụ ứng dụng |
+| `FootballBooking.Domain` | Entity, enum và quy tắc nghiệp vụ cốt lõi |
+| `FootballBooking.Infrastructure` | Entity Framework Core, Identity, lưu trữ dữ liệu và seed |
+| `FootballBooking.Tests` | Unit test và integration test |
 
-### Công khai
+## Quy tắc nghiệp vụ chính
 
+### Chống trùng lịch
 
-/
-/fields
-/fields/{slug}
-/booking
-/booking/lookup
-/login
-/register
-/account
+Hai booking bị xem là trùng nhau khi:
 
+```text
+newStart < existingEnd
+và
+newEnd > existingStart
+```
 
-### Nội bộ
+Hai booking nằm sát nhau vẫn được chấp nhận.
 
+Ví dụ:
 
-/admin/login
-/admin/dashboard
-/admin/schedule
-/admin/bookings
-/admin/payments
-/admin/fields
-/admin/pricing
-/admin/services
-/admin/promotions
-/admin/reports
-/admin/staff
-/admin/activity-logs
+```text
+17:00–18:00
+18:00–19:00
+```
 
+### Trạng thái booking
 
-Website công khai không hiển thị nút đăng nhập quản trị. Chủ sân và nhân viên truy cập trực tiếp `/admin/login`.
+Các trạng thái chính:
+
+- Chờ thanh toán
+- Đã xác nhận
+- Đã check-in
+- Đang sử dụng
+- Hoàn thành
+- Đã hủy
+- Khách không đến
+- Hết hạn
+
+### Trạng thái thanh toán
+
+Trạng thái booking và trạng thái thanh toán được quản lý độc lập:
+
+- Chưa thanh toán
+- Đã thanh toán một phần
+- Đã thanh toán đủ
+- Đang hoàn tiền
+- Đã hoàn tiền một phần
+- Đã hoàn tiền
+- Thanh toán thất bại
+
+### Lưu trữ tiền
+
+Giá trị tiền được lưu bằng kiểu `long` theo đơn vị Việt Nam đồng.
+
+Ví dụ:
+
+```text
+200000 = 200.000 ₫
+```
+
+### Ngày và thời gian
+
+Booking được lưu bằng:
+
+- Ngày đặt sân.
+- Phút bắt đầu trong ngày.
+- Phút kết thúc trong ngày.
+
+Cách lưu này giúp kiểm tra giao nhau giữa các khung giờ đơn giản và chính xác.
 
 ## Yêu cầu môi trường
 
-- Windows 10/11 hoặc hệ điều hành hỗ trợ .NET 10.
-- .NET 10 SDK.
-- Visual Studio có workload **ASP.NET and web development**, hoặc IDE tương đương.
-- Node.js LTS và npm.
-- Git.
-- EF Core CLI.
-- DB Browser for SQLite hoặc SQLiteStudio, không bắt buộc.
+Cần cài đặt:
 
-## Tạo project
+- .NET 10 SDK
+- Node.js LTS
+- npm
+- Git
+- EF Core CLI
 
-Xem hướng dẫn đầy đủ tại:
+Cài EF Core CLI:
 
+```powershell
+dotnet tool install --global dotnet-ef
+```
 
-docs/SETUP_AND_RUN.md
+## Cài đặt dự án
 
+Clone repository:
 
-Luồng CLI rút gọn:
-
-
-mkdir FootballBooking
+```powershell
+git clone https://github.com/vdtrong2051/FootballBooking.git
 cd FootballBooking
+```
 
-dotnet new sln -n FootballBooking
-mkdir src tests
+Khôi phục package .NET:
 
-dotnet new mvc -n FootballBooking.Web -o src/FootballBooking.Web --framework net10.0
-dotnet new classlib -n FootballBooking.Application -o src/FootballBooking.Application --framework net10.0
-dotnet new classlib -n FootballBooking.Domain -o src/FootballBooking.Domain --framework net10.0
-dotnet new classlib -n FootballBooking.Infrastructure -o src/FootballBooking.Infrastructure --framework net10.0
-dotnet new xunit -n FootballBooking.Tests -o tests/FootballBooking.Tests --framework net10.0
+```powershell
+dotnet restore
+```
 
-dotnet sln add src/FootballBooking.Web/FootballBooking.Web.csproj
-dotnet sln add src/FootballBooking.Application/FootballBooking.Application.csproj
-dotnet sln add src/FootballBooking.Domain/FootballBooking.Domain.csproj
-dotnet sln add src/FootballBooking.Infrastructure/FootballBooking.Infrastructure.csproj
-dotnet sln add tests/FootballBooking.Tests/FootballBooking.Tests.csproj
+Cài package frontend:
 
+```powershell
+npm install
+```
 
-Không chạy các lệnh này nếu Codex đã khởi tạo solution theo `TASKS.md`; hãy kiểm tra repository trước.
+Build frontend:
 
-## Cấu hình local
+```powershell
+npm run build
+```
 
-Cấu hình không bí mật nằm trong:
+## Cấu hình tài khoản quản trị local
 
+Dự án sử dụng .NET Secret Manager để lưu thông tin tài khoản quản trị trong môi trường phát triển.
 
-src/FootballBooking.Web/appsettings.json
+Khởi tạo Secret Manager:
 
-
-Bí mật local dùng Secret Manager:
-
-
+```powershell
 dotnet user-secrets init --project src/FootballBooking.Web
+```
+
+Thiết lập tài khoản Owner:
+
+```powershell
 dotnet user-secrets set "SeedOwner:Email" "owner@example.local" --project src/FootballBooking.Web
 dotnet user-secrets set "SeedOwner:Password" "ChangeThisLocalOnly!123" --project src/FootballBooking.Web
+```
 
-
-Không commit mật khẩu thật.
+Không commit mật khẩu thật hoặc file chứa thông tin bí mật lên GitHub.
 
 ## Database
 
+Connection string local mặc định:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=App_Data/football-booking.db"
+  }
+}
+```
+
 Tạo migration:
 
-
+```powershell
 dotnet ef migrations add InitialCreate `
   --project src/FootballBooking.Infrastructure `
   --startup-project src/FootballBooking.Web
-
+```
 
 Áp dụng migration:
 
-
+```powershell
 dotnet ef database update `
   --project src/FootballBooking.Infrastructure `
   --startup-project src/FootballBooking.Web
+```
 
+File SQLite local:
 
-File SQLite local dự kiến:
-
-
+```text
 src/FootballBooking.Web/App_Data/football-booking.db
+```
 
+Database local không được commit lên GitHub.
 
-Thư mục `App_Data` và file database local không nên commit.
+## Tạo dữ liệu mẫu
 
-## Frontend assets
+Chạy ứng dụng với tham số seed:
 
-Sau khi project có `package.json`:
+```powershell
+dotnet run `
+  --project src/FootballBooking.Web `
+  -- --seed-development-data
+```
 
-npm install
-npm run build
+Dữ liệu mẫu gồm:
 
+- Sân bóng.
+- Khung giờ hoạt động.
+- Dịch vụ.
+- Mã khuyến mãi.
+- Tài khoản nội bộ được cấu hình bằng Secret Manager.
 
-Khi phát triển:
-
-
-npm run dev
-
+Seed dữ liệu chỉ được phép chạy trong môi trường `Development`.
 
 ## Chạy ứng dụng
 
-Terminal 1:
+### Cách 1: chạy frontend và backend riêng
 
+Terminal thứ nhất:
 
+```powershell
 npm run dev
+```
 
+Terminal thứ hai:
 
-Terminal 2:
-
-
+```powershell
 dotnet watch --project src/FootballBooking.Web
+```
 
+### Cách 2: build frontend trước
 
-Hoặc trong Visual Studio, đặt `FootballBooking.Web` làm Startup Project và nhấn `F5`.
+```powershell
+npm run build
+dotnet run --project src/FootballBooking.Web
+```
 
-## Kiểm tra trước khi commit
+Sau khi ứng dụng khởi động, terminal sẽ hiển thị địa chỉ đang lắng nghe, ví dụ:
 
+```text
+http://localhost:5100
+```
 
+## Các URL chính
+
+### Website khách hàng
+
+```text
+/
+```
+
+```text
+/fields
+```
+
+```text
+/booking
+```
+
+```text
+/booking/lookup
+```
+
+### Khu vực nội bộ
+
+```text
+/admin/login
+```
+
+```text
+/admin/dashboard
+```
+
+```text
+/admin/schedule
+```
+
+```text
+/admin/bookings
+```
+
+```text
+/admin/payments
+```
+
+```text
+/admin/fields
+```
+
+```text
+/admin/pricing
+```
+
+```text
+/admin/services
+```
+
+```text
+/admin/promotions
+```
+
+```text
+/admin/reports
+```
+
+```text
+/admin/staff
+```
+
+```text
+/admin/activity-logs
+```
+
+Website công khai không hiển thị liên kết đăng nhập quản trị. Chủ sân và nhân viên truy cập trực tiếp `/admin/login`.
+
+## Chạy kiểm thử
+
+Build solution:
+
+```powershell
+dotnet build
+```
+
+Chạy toàn bộ test:
+
+```powershell
+dotnet test
+```
+
+Chạy test ở chế độ Release:
+
+```powershell
+dotnet build -c Release
+dotnet test -c Release --no-build
+```
+
+Xuất kết quả test:
+
+```powershell
+dotnet test `
+  --logger "trx;LogFileName=FootballBooking.trx" `
+  --results-directory TestResults
+```
+
+Các nhóm nghiệp vụ được kiểm thử gồm:
+
+- Chống trùng booking.
+- Cho phép hai booking nằm sát nhau.
+- Kiểm tra thời gian khóa sân.
+- Tính giá theo nhiều khoảng thời gian.
+- Áp dụng dịch vụ và khuyến mãi.
+- Đặt sân không cần tài khoản.
+- Ghi nhận tiền cọc.
+- Chuyển trạng thái vận hành.
+- Phân quyền khu vực quản trị.
+- Kiểm tra các route công khai và nội bộ.
+
+## Build trước khi commit
+
+```powershell
 dotnet restore
 dotnet build --no-restore
 dotnet test --no-build
 npm run build
 git status
-
+```
 
 ## Tài liệu dự án
 
+Các tài liệu chi tiết nằm trong thư mục `docs`:
+
 - [Đặc tả dự án](docs/PROJECT_SPEC.md)
-- [Kiến trúc](docs/ARCHITECTURE.md)
-- [Cơ sở dữ liệu](docs/DATABASE.md)
+- [Kiến trúc hệ thống](docs/ARCHITECTURE.md)
+- [Thiết kế cơ sở dữ liệu](docs/DATABASE.md)
 - [Quy tắc nghiệp vụ](docs/BUSINESS_RULES.md)
-- [Route và UI](docs/UI_ROUTES.md)
+- [Route và giao diện](docs/UI_ROUTES.md)
 - [Kiểm thử](docs/TESTING.md)
 - [Kế hoạch triển khai](docs/IMPLEMENTATION_PLAN.md)
-- [Cài đặt và chạy](docs/SETUP_AND_RUN.md)
-- [Công việc hiện tại](TASKS.md)
+- [Hướng dẫn cài đặt](docs/SETUP_AND_RUN.md)
 
-## Nguyên tắc phát triển
+## Trạng thái dự án
 
-- Đọc `AGENTS.md` trước khi sửa code.
-- Chỉ thực hiện các task đang nằm trong `TASKS.md`.
-- Controller không chứa logic nghiệp vụ phức tạp.
-- SQLite là nguồn dữ liệu chính; JSON không thay thế database.
-- Tiền lưu bằng `long` theo đơn vị VND.
-- Booking lưu ngày và phút bắt đầu/kết thúc.
-- Mọi kiểm tra lịch phải được xác nhận lại ở backend.
+Dự án hiện đã có:
 
+- Cấu trúc solution hoàn chỉnh.
+- Website khách hàng.
+- Khu vực quản trị bằng ASP.NET Core Area.
+- Quản lý sân và lịch hoạt động.
+- Luồng đặt sân công khai.
+- Chống trùng booking.
+- Dịch vụ và mã khuyến mãi.
+- Thanh toán và đặt cọc.
+- Dashboard và báo cáo.
+- Unit test và integration test.
+
+Các phần đang tiếp tục hoàn thiện:
+
+- Tối ưu trải nghiệm thao tác của nhân viên.
+- Hoàn thiện luồng xác minh chuyển khoản.
+- Bổ sung ảnh giao diện.
+- Đóng gói Docker.
+- Cấu hình database cho môi trường triển khai.
+- Triển khai bản demo trực tuyến.
+
+## Giấy phép
+
+Dự án được phát triển phục vụ mục đích học tập, thực hành kỹ thuật phần mềm và xây dựng portfolio.
