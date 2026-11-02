@@ -73,9 +73,11 @@ public sealed class ReportServiceTests
         Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Dịch vụ" && step.Delta == 100000);
         Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Khuyến mãi" && step.Delta == -50000);
         Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Hoàn trả" && step.Delta == -20000);
+        var penultimateStep = dataset.WaterfallSteps![^2];
         var finalStep = dataset.WaterfallSteps!.Last();
         Assert.True(finalStep.IsTotal);
         Assert.Equal("Thực thu ròng", finalStep.Label);
+        Assert.Equal(280000, penultimateStep.End);
         Assert.Equal(280000, finalStep.End);
     }
 

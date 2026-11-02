@@ -177,8 +177,8 @@ public sealed class ReportService(IReportStore store, ISystemClock clock) : IRep
         var discountTotal = activeBookings.Sum(booking => booking.DiscountAmount);
         var cancellationFeeTotal = activeBookings.Sum(booking => booking.CancellationFeeAmount) + cancelledWithFee.Sum(booking => booking.CancellationFeeAmount);
         var refundedTotal = activeBookings.Sum(booking => booking.RefundedAmount);
-        var remainingTotal = activeBookings.Sum(RemainingAmount);
-        var netPaidTotal = activeBookings.Sum(NetPaid);
+        var netPaidTotal = activeBookings.Sum(NetPaid) + cancelledWithFee.Sum(NetPaid);
+        var uncollectedTotal = Math.Max(0, courtTotal + serviceTotal - discountTotal + cancellationFeeTotal - refundedTotal - netPaidTotal);
 
         var rawDeltas = new (string Label, long Delta, string Tone)[]
         {
@@ -187,7 +187,7 @@ public sealed class ReportService(IReportStore store, ISystemClock clock) : IRep
             ("Khuyến mãi", -discountTotal, "warning"),
             ("Phí hủy", cancellationFeeTotal, "active"),
             ("Hoàn trả", -refundedTotal, "danger"),
-            ("Còn phải thu", -remainingTotal, "warning")
+            ("Còn phải thu", -uncollectedTotal, "warning")
         };
 
         var steps = new List<WaterfallStepDto>();

@@ -1,8 +1,7 @@
 @model BookingSuccessViewModel
 @{
     ViewData["Title"] = "Đặt sân thành công";
-    var preferredPayment = Model.Booking.Payments.OrderByDescending(payment => payment.CreatedAtUtc).FirstOrDefault();
-    var selectedMethod = preferredPayment?.Method ?? PaymentMethod.VietQr;
+    var selectedMethod = Model.Booking.PreferredPaymentMethod;
 }
 @functions {
     private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");

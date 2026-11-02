@@ -1,3 +1,4 @@
+@using FootballBooking.Application.Common.Security
 <header class="border-b border-line bg-white">
     <nav class="fb-container flex min-h-16 items-center justify-between gap-4" aria-label="Điều hướng công khai">
         <partial name="Partials/_BrandLogo" />
@@ -18,6 +19,11 @@
         <div class="hidden items-center gap-2 lg:flex">
             @if (User.Identity?.IsAuthenticated == true)
             {
+                <span class="text-xs font-medium text-muted">@User.Identity.Name</span>
+                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
+                {
+                    <a class="fb-button fb-button-secondary" href="/admin/dashboard">Vào trang Quản trị</a>
+                }
                 <a class="fb-button fb-button-secondary" href="/account/bookings">Lịch đặt của tôi</a>
                 <form method="post" action="/account/logout" class="inline">
                     @Html.AntiForgeryToken()
@@ -51,6 +57,10 @@
             <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/contact">Liên hệ</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
+                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
+                {
+                    <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/admin/dashboard">Vào trang Quản trị</a>
+                }
                 <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/bookings">Lịch đặt của tôi</a>
             }
             else

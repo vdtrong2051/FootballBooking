@@ -120,6 +120,31 @@ public sealed record BookingDetailDto(
     IReadOnlyList<PaymentRecordDto> Payments)
 {
     public long RemainingAmount => Math.Max(0, TotalAmount - PaidAmount + RefundedAmount);
+
+    public PaymentMethod PreferredPaymentMethod
+    {
+        get
+        {
+            var latestPayment = Payments.OrderByDescending(payment => payment.CreatedAtUtc).FirstOrDefault();
+            if (latestPayment is not null)
+            {
+                return latestPayment.Method;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Note))
+            {
+                foreach (var method in Enum.GetValues<PaymentMethod>())
+                {
+                    if (Note.Contains(BookingLabels.PaymentMethod(method), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return method;
+                    }
+                }
+            }
+
+            return PaymentMethod.VietQr;
+        }
+    }
 }
 
 public sealed record BookingCommandResult(bool Succeeded, string? BookingCode, Guid? BookingId, IReadOnlyList<string> Errors)

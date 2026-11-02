@@ -168,6 +168,11 @@ public sealed class AccountController(
             return Redirect(returnUrl);
         }
 
+        if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
+        {
+            return Redirect("/admin/dashboard");
+        }
+
         return RedirectToAction(nameof(Bookings));
     }
 }

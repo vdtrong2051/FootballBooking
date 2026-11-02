@@ -68,7 +68,7 @@ if (calendarElement) {
     },
     dateClick: (info) => {
       const clickedDate = info.date;
-      const yyyyMmDd = clickedDate.toISOString().slice(0, 10);
+      const yyyyMmDd = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, "0")}-${String(clickedDate.getDate()).padStart(2, "0")}`;
       const startMinute = clickedDate.getHours() * 60 + clickedDate.getMinutes();
       const targetUrl = new URL(createUrl, window.location.origin);
       if (fieldId) {

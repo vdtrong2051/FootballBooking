@@ -276,13 +276,19 @@ public sealed class StaffController(
             .Where(booking => booking.BookingDate >= monthStart && booking.BookingDate <= monthEnd && booking.CreatedByUserId != null)
             .ToListAsync(cancellationToken);
 
-        var paymentsInMonth = await dbContext.Payments
+        var paymentsInMonth = (await dbContext.Payments
             .AsNoTracking()
             .Where(payment =>
                 payment.RecordedByUserId != null
                 && payment.Status == PaymentRecordStatus.Succeeded
                 && payment.PaymentType == PaymentRecordType.Payment)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .Where(payment =>
+            {
+                var recordedDate = DateOnly.FromDateTime((payment.ProcessedAtUtc ?? payment.CreatedAtUtc).UtcDateTime);
+                return recordedDate >= monthStart && recordedDate <= monthEnd;
+            })
+            .ToArray();
 
         var result = new List<StaffListItemViewModel>(staffUsers.Count);
         foreach (var user in staffUsers.OrderBy(candidate => candidate.FullName))

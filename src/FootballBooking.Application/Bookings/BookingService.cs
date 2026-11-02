@@ -368,10 +368,9 @@ public sealed class BookingService(
         }
 
         var bookings = await store.ListScheduleBookingsAsync(startDate, endDateExclusive, fieldId, cancellationToken);
-        if (status is not null)
-        {
-            bookings = bookings.Where(booking => booking.Status == status.Value).ToArray();
-        }
+        bookings = status is null
+            ? bookings.Where(booking => booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Expired).ToArray()
+            : bookings.Where(booking => booking.Status == status.Value).ToArray();
 
         var blocks = await store.ListScheduleBlocksAsync(startDate, endDateExclusive, fieldId, cancellationToken);
         var events = new List<ScheduleEventDto>();

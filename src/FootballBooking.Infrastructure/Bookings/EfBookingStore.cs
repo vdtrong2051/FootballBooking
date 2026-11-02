@@ -125,7 +125,7 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
             .AsNoTracking()
             .Include(booking => booking.Field)
             .Where(booking => booking.BookingDate >= startDate && booking.BookingDate < endDateExclusive)
-            .Where(booking => booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Expired)
+            .Where(booking => booking.Status != BookingStatus.Expired)
             .AsQueryable();
 
         if (fieldId is not null)

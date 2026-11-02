@@ -36,6 +36,7 @@
         <div class="grid gap-4">
             @foreach (var booking in Model.Bookings)
             {
+                var canCancel = booking.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed;
                 <article class="fb-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -49,6 +50,15 @@
                     <div class="flex flex-wrap gap-2">
                         <a class="fb-button fb-button-secondary" href="/booking/success/@booking.BookingCode">Chi tiết &amp; QR thanh toán</a>
                         <a class="fb-button fb-button-primary" href="/booking?fieldId=@booking.FieldId&amp;startMinute=@booking.StartMinute">Đặt lại khung giờ này</a>
+                        @if (canCancel)
+                        {
+                            <form method="post" action="/booking/@booking.BookingCode/cancel" class="inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="customerPhone" value="@booking.CustomerPhone" />
+                                <input type="hidden" name="cancellationReason" value="Khách hàng chủ động hủy trên trang tài khoản" />
+                                <button type="submit" class="fb-button fb-button-danger">Hủy sân</button>
+                            </form>
+                        }
                     </div>
                 </article>
             }

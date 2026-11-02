@@ -35,7 +35,7 @@ public sealed class BookingServiceTests
         {
             Source = BookingSource.CustomerAccount,
             CustomerUserId = customerId,
-            PreferredPaymentMethod = PaymentMethod.VietQr
+            PreferredPaymentMethod = PaymentMethod.MoMo
         });
 
         Assert.True(result.Succeeded);
@@ -43,7 +43,10 @@ public sealed class BookingServiceTests
         Assert.Equal(BookingStatus.PendingPayment, booking.Status);
         Assert.NotNull(booking.ExpiresAtUtc);
         Assert.Equal(customerId, booking.CustomerUserId);
-        Assert.Contains("Quét mã VietQR", booking.Note);
+        Assert.Contains("Ví MoMo", booking.Note);
+        var detail = await service.GetBookingByCodeAsync(result.BookingCode!);
+        Assert.NotNull(detail);
+        Assert.Equal(PaymentMethod.MoMo, detail!.PreferredPaymentMethod);
     }
 
     [Fact]
@@ -62,12 +65,16 @@ public sealed class BookingServiceTests
         var store = new InMemoryBookingStore(field);
         store.Bookings.Add(CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed));
         store.Bookings.Add(CreateExistingBooking(field.Id, 1140, 1200, BookingStatus.PendingPayment));
+        store.Bookings.Add(CreateExistingBooking(field.Id, 1200, 1260, BookingStatus.Cancelled));
         var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
 
         var events = await service.ListScheduleEventsAsync(new DateOnly(2026, 7, 26), new DateOnly(2026, 7, 27), null, BookingStatus.PendingPayment);
+        var cancelledEvents = await service.ListScheduleEventsAsync(new DateOnly(2026, 7, 26), new DateOnly(2026, 7, 27), null, BookingStatus.Cancelled);
 
         var scheduleEvent = Assert.Single(events);
         Assert.Equal(BookingStatus.PendingPayment, scheduleEvent.Status);
+        var cancelledEvent = Assert.Single(cancelledEvents);
+        Assert.Equal(BookingStatus.Cancelled, cancelledEvent.Status);
     }
 
     [Fact]

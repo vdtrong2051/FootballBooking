@@ -13,7 +13,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/bookings")]
-[Authorize(Policy = "CanManageSchedule")]
+[Authorize(Policy = "CanAccessBookings")]
 public sealed class BookingsController(IBookingService bookingService, IFieldService fieldService) : Controller
 {
     [HttpGet("")]
@@ -34,6 +34,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpGet("create")]
+    [Authorize(Policy = "CanManageSchedule")]
     public async Task<IActionResult> Create(Guid? fieldId = null, string? date = null, int? startMinute = null, CancellationToken cancellationToken = default)
     {
         var model = new BookingCreateViewModel
@@ -50,6 +51,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("create")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingCreateViewModel model, CancellationToken cancellationToken)
     {
@@ -117,6 +119,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpGet("{id:guid}/settlement")]
+    [Authorize(Policy = "CanManagePayments")]
     public async Task<IActionResult> Settlement(Guid id, CancellationToken cancellationToken)
     {
         var booking = await bookingService.GetAdminBookingAsync(id, cancellationToken);
@@ -142,11 +145,13 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("{id:guid}/settlement")]
+    [Authorize(Policy = "CanManagePayments")]
     [ValidateAntiForgeryToken]
     public IActionResult SettlementShortcut(Guid id)
         => RedirectToAction(nameof(Settlement), new { id });
 
     [HttpPost("{id:guid}/settlement/payments")]
+    [Authorize(Policy = "CanManagePayments")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordSettlementPayment(Guid id, PaymentFormViewModel model, CancellationToken cancellationToken)
     {
@@ -161,6 +166,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("{id:guid}/settlement/complete")]
+    [Authorize(Policy = "CanManagePayments")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteFromSettlement(Guid id, CancellationToken cancellationToken)
     {
@@ -173,31 +179,37 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("{id:guid}/status")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeStatus(Guid id, BookingStatus targetStatus, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, targetStatus, cancellationToken);
 
     [HttpPost("{id:guid}/confirm")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Confirm(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.Confirmed, cancellationToken);
 
     [HttpPost("{id:guid}/check-in")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CheckIn(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.CheckedIn, cancellationToken);
 
     [HttpPost("{id:guid}/start")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Start(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.InProgress, cancellationToken);
 
     [HttpPost("{id:guid}/complete")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.Completed, cancellationToken);
 
     [HttpPost("{id:guid}/no-show")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> NoShow(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.NoShow, cancellationToken);
@@ -213,6 +225,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("{id:guid}/payments")]
+    [Authorize(Policy = "CanManagePayments")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RecordPayment(Guid id, PaymentFormViewModel model, CancellationToken cancellationToken)
     {
@@ -251,6 +264,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpPost("{id:guid}/cancel")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Cancel(Guid id, CancellationFormViewModel model, CancellationToken cancellationToken)
     {

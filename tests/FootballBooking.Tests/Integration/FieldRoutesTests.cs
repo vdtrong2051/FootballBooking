@@ -138,6 +138,7 @@ public sealed class FieldRoutesTests
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Redirect, bookingsAnonymousResponse.StatusCode);
+        Assert.Equal("/account/login", bookingsAnonymousResponse.Headers.Location?.AbsolutePath);
     }
 
     [Fact]
