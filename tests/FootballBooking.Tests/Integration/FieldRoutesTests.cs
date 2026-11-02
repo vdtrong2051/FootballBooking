@@ -185,6 +185,61 @@ public sealed class FieldRoutesTests
         Assert.Equal(1140, createModel.EndMinute);
     }
 
+    [Fact]
+    public async Task StaffController_WhenStaffCreatedWithPayrollAndPermissions_CalculatesMonthlySalaryAndExportsCsv()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<FootballBooking.Infrastructure.Identity.ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole<Guid>>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        if (!await roleManager.RoleExistsAsync(FootballBooking.Application.Common.Security.ApplicationRoles.Staff))
+        {
+            await roleManager.CreateAsync(new Microsoft.AspNetCore.Identity.IdentityRole<Guid>(FootballBooking.Application.Common.Security.ApplicationRoles.Staff));
+        }
+
+        var staffController = new FootballBooking.Web.Areas.Admin.Controllers.StaffController(userManager, dbContext)
+        {
+            TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                new TestTempDataProvider())
+        };
+
+        var createResponse = await staffController.Create(new FootballBooking.Web.Areas.Admin.ViewModels.StaffFormViewModel
+        {
+            FullName = "Trần Văn Bình",
+            Email = "binh.staff@anphu.local",
+            Password = "StaffPassword1!",
+            BaseSalary = 6_000_000,
+            HourlyRate = 25_000,
+            StandardHoursPerMonth = 160,
+            CommissionPercent = 2.0m,
+            SelectedPermissions =
+            [
+                FootballBooking.Application.Common.Security.StaffPermissions.ManageSchedule,
+                FootballBooking.Application.Common.Security.StaffPermissions.ViewReports
+            ],
+            IsActive = true
+        }, CancellationToken.None);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(createResponse);
+
+        var indexResult = Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(await staffController.Index("2026-07", CancellationToken.None));
+        var staffList = Assert.IsAssignableFrom<IReadOnlyList<FootballBooking.Web.Areas.Admin.ViewModels.StaffListItemViewModel>>(indexResult.Model);
+        var createdStaff = Assert.Single(staffList, item => item.Email == "binh.staff@anphu.local");
+
+        Assert.Equal(6_000_000, createdStaff.Salary.BaseSalary);
+        Assert.Equal(4_000_000, createdStaff.Salary.HourlyPay);
+        Assert.Equal(10_000_000, createdStaff.Salary.TotalSalary);
+        Assert.Contains(FootballBooking.Application.Common.Security.StaffPermissions.ViewReports, createdStaff.Permissions);
+
+        var csvResult = Assert.IsType<Microsoft.AspNetCore.Mvc.FileContentResult>(await staffController.ExportPayrollCsv("2026-07", CancellationToken.None));
+        var csvText = System.Text.Encoding.UTF8.GetString(csvResult.FileContents);
+        Assert.Contains("Trần Văn Bình", csvText);
+        Assert.Contains("10000000", csvText);
+    }
+
     private static async Task<FieldRouteFactory> CreateSeededFactoryAsync()
     {
         var factory = new FieldRouteFactory();
@@ -235,5 +290,11 @@ public sealed class FieldRoutesTests
     private sealed class FixedClock : ISystemClock
     {
         public DateTimeOffset UtcNow => new(2026, 7, 25, 0, 0, 0, TimeSpan.Zero);
+    }
+
+    private sealed class TestTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
+    {
+        public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context) => new Dictionary<string, object>();
+        public void SaveTempData(Microsoft.AspNetCore.Http.HttpContext context, IDictionary<string, object> values) { }
     }
 }

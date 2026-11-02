@@ -11,7 +11,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/schedule")]
-[Authorize(Policy = "InternalUser")]
+[Authorize(Policy = "CanManageSchedule")]
 public sealed class ScheduleController(IBookingService bookingService, IFieldService fieldService) : Controller
 {
     [HttpGet("")]

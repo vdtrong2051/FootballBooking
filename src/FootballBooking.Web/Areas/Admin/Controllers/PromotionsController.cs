@@ -8,7 +8,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/promotions")]
-[Authorize(Policy = "OwnerOnly")]
+[Authorize(Policy = "CanManageCatalog")]
 public sealed class PromotionsController(IBookingService bookingService) : Controller
 {
     [HttpGet("")]

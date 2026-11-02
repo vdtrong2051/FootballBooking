@@ -8,7 +8,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/reports")]
-[Authorize(Policy = "OwnerOnly")]
+[Authorize(Policy = "CanViewReports")]
 public sealed class ReportsController(IReportService reportService) : Controller
 {
     [HttpGet("")]

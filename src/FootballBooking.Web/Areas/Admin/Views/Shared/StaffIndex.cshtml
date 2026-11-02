@@ -1,63 +1,116 @@
 @model IReadOnlyList<StaffListItemViewModel>
+@using FootballBooking.Application.Common.Security
 @{
-    ViewData["Title"] = "Nhân viên";
+    ViewData["Title"] = "Nhân viên & Bảng lương";
+    var selectedMonth = ViewData["SelectedMonth"] as string ?? DateTime.UtcNow.ToString("yyyy-MM");
+    var totalPayroll = Model.Sum(item => item.Salary.TotalSalary);
+    var totalCommission = Model.Sum(item => item.Salary.CommissionPay);
+}
+@functions {
+    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
 }
 
-<section class="fb-card p-4">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-xl font-semibold text-ink">Nhân viên</h1>
-            <p class="mt-1 text-sm text-muted">Owner quản lý tài khoản nội bộ của nhân viên vận hành sân.</p>
+<div class="space-y-5">
+    <section class="fb-card p-4">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-xl font-semibold text-ink">Nhân viên, Phân quyền &amp; Bảng lương</h1>
+                <p class="mt-1 text-sm text-muted">Quản lý quyền thao tác chi tiết và tự động tính lương tháng (Lương cơ bản + Giờ công + Hoa hồng doanh thu xử lý).</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <form method="get" action="/admin/staff" class="flex items-center gap-2">
+                    <input type="month" name="month" value="@selectedMonth" class="fb-input py-1.5 text-sm" aria-label="Chọn tháng tính lương" />
+                    <button type="submit" class="fb-button fb-button-secondary">Xem bảng lương</button>
+                </form>
+                <a class="fb-button fb-button-secondary" href="/admin/staff/payroll.csv?month=@selectedMonth">Xuất CSV lương</a>
+                <a class="fb-button fb-button-primary" href="/admin/staff/create">Thêm nhân viên</a>
+            </div>
         </div>
-        <a class="fb-button fb-button-primary justify-center" href="/admin/staff/create">Thêm nhân viên</a>
-    </div>
 
-    @if (Model.Count == 0)
-    {
-        <div class="mt-4">
-            <partial name="~/Views/Shared/Partials/_EmptyState.cshtml" model='new EmptyStateViewModel("Chưa có nhân viên", "Thêm tài khoản nhân viên để phân quyền thao tác vận hành.", IconName: "users")' />
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-ui border border-line bg-slate-50 p-3">
+                <p class="text-xs text-muted">Tổng nhân sự vận hành</p>
+                <p class="mt-1 text-lg font-semibold text-ink">@Model.Count nhân viên</p>
+            </div>
+            <div class="rounded-ui border border-line bg-slate-50 p-3">
+                <p class="text-xs text-muted">Tổng thưởng hoa hồng (@selectedMonth)</p>
+                <p class="mt-1 text-lg font-semibold text-brand-800">@FormatMoney(totalCommission)</p>
+            </div>
+            <div class="rounded-ui border border-brand-200 bg-brand-50 p-3">
+                <p class="text-xs text-brand-900">Tổng quỹ lương thực lĩnh (@selectedMonth)</p>
+                <p class="mt-1 text-lg font-semibold text-brand-900">@FormatMoney(totalPayroll)</p>
+            </div>
         </div>
-    }
-    else
-    {
-        <div class="mt-4 overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-                <thead class="border-b border-line text-xs uppercase text-muted">
-                    <tr>
-                        <th class="py-2 pr-3">Họ tên</th>
-                        <th class="py-2 pr-3">Email</th>
-                        <th class="py-2 pr-3">Trạng thái</th>
-                        <th class="py-2 pr-3">Ngày tạo</th>
-                        <th class="py-2 text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-line">
-                    @foreach (var staff in Model)
-                    {
-                        var isActive = staff.AccountStatus == FootballBooking.Domain.Users.AccountStatus.Active;
+    </section>
+
+    <section class="fb-card p-4">
+        @if (Model.Count == 0)
+        {
+            <partial name="~/Views/Shared/Partials/_EmptyState.cshtml" model='new EmptyStateViewModel("Chưa có nhân viên", "Thêm tài khoản nhân viên để phân quyền thao tác vận hành và tính lương tự động.", IconName: "users")' />
+        }
+        else
+        {
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b border-line text-xs uppercase text-muted">
                         <tr>
-                            <td class="py-2 pr-3 font-medium text-ink">@staff.FullName</td>
-                            <td class="py-2 pr-3 text-muted">@staff.Email</td>
-                            <td class="py-2 pr-3">
-                                <partial name="~/Views/Shared/Partials/_StatusBadge.cshtml" model='new StatusBadgeViewModel(staff.StatusLabel, staff.StatusTone)' />
-                            </td>
-                            <td class="py-2 pr-3 text-muted">@staff.CreatedAtUtc.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy")</td>
-                            <td class="py-2">
-                                <div class="flex justify-end gap-2">
-                                    <a class="fb-button fb-button-secondary px-3 py-1.5 text-xs" href="/admin/staff/@staff.Id/edit">Sửa</a>
-                                    <form method="post" action="/admin/staff/@staff.Id/toggle">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="isActive" value="@(!isActive)" />
-                                        <button class="fb-button @(isActive ? "fb-button-danger" : "fb-button-secondary") px-3 py-1.5 text-xs" type="submit">
-                                            @(isActive ? "Khóa" : "Mở khóa")
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th class="py-2 pr-3">Nhân viên</th>
+                            <th class="py-2 pr-3">Trạng thái</th>
+                            <th class="py-2 pr-3">Phân quyền</th>
+                            <th class="py-2 pr-3 text-right">Lương cứng</th>
+                            <th class="py-2 pr-3 text-right">Lương giờ công</th>
+                            <th class="py-2 pr-3 text-right">Hoa hồng</th>
+                            <th class="py-2 pr-3 text-right">Thực lĩnh</th>
+                            <th class="py-2 text-right">Thao tác</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
+                    </thead>
+                    <tbody class="divide-y divide-line">
+                        @foreach (var staff in Model)
+                        {
+                            var isActive = staff.AccountStatus == FootballBooking.Domain.Users.AccountStatus.Active;
+                            <tr>
+                                <td class="py-3 pr-3">
+                                    <p class="font-semibold text-ink">@staff.FullName</p>
+                                    <p class="text-xs text-muted">@staff.Email</p>
+                                </td>
+                                <td class="py-3 pr-3">
+                                    <partial name="~/Views/Shared/Partials/_StatusBadge.cshtml" model='new StatusBadgeViewModel(staff.StatusLabel, staff.StatusTone)' />
+                                </td>
+                                <td class="py-3 pr-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach (var permission in staff.Permissions)
+                                        {
+                                            <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">@StaffPermissions.Label(permission)</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="py-3 pr-3 text-right font-medium text-ink">@FormatMoney(staff.Salary.BaseSalary)</td>
+                                <td class="py-3 pr-3 text-right text-muted">
+                                    <p class="font-medium text-ink">@FormatMoney(staff.Salary.HourlyPay)</p>
+                                    <p class="text-xs">@staff.Salary.StandardHours giờ × @FormatMoney(staff.Salary.HourlyRate)</p>
+                                </td>
+                                <td class="py-3 pr-3 text-right text-muted">
+                                    <p class="font-medium text-ink">@FormatMoney(staff.Salary.CommissionPay)</p>
+                                    <p class="text-xs">@staff.Salary.CommissionPercent% · @staff.HandledBookingsCount ca</p>
+                                </td>
+                                <td class="py-3 pr-3 text-right font-semibold text-brand-900">@FormatMoney(staff.Salary.TotalSalary)</td>
+                                <td class="py-3">
+                                    <div class="flex justify-end gap-2">
+                                        <a class="fb-button fb-button-secondary px-3 py-1.5 text-xs" href="/admin/staff/@staff.Id/edit">Sửa lương &amp; quyền</a>
+                                        <form method="post" action="/admin/staff/@staff.Id/toggle">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="isActive" value="@(!isActive)" />
+                                            <button class="fb-button @(isActive ? "fb-button-danger" : "fb-button-secondary") px-3 py-1.5 text-xs" type="submit">
+                                                @(isActive ? "Khóa" : "Mở khóa")
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

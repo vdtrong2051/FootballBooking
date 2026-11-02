@@ -10,7 +10,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/fields")]
-[Authorize(Policy = "OwnerOnly")]
+[Authorize(Policy = "CanManageCatalog")]
 public sealed class FieldsController(IFieldService fieldService) : Controller
 {
     [HttpGet("")]

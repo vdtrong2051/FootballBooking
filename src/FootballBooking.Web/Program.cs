@@ -2,6 +2,7 @@ using FootballBooking.Application;
 using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Common.Security;
 using FootballBooking.Infrastructure;
+using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Identity;
 using FootballBooking.Infrastructure.SeedData;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
@@ -25,6 +26,10 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("InternalUser", policy => policy.RequireRole(ApplicationRoles.Internal));
     options.AddPolicy("OwnerOnly", policy => policy.RequireRole(ApplicationRoles.Owner));
+    options.AddPolicy("CanManageSchedule", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManageSchedule)));
+    options.AddPolicy("CanManagePayments", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManagePayments)));
+    options.AddPolicy("CanManageCatalog", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManageCatalog)));
+    options.AddPolicy("CanViewReports", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ViewReports)));
 });
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -42,6 +47,8 @@ if (shouldSeedDevelopmentData)
     }
 
     using var seedScope = app.Services.CreateScope();
+    var dbContext = seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
     var identitySeeder = seedScope.ServiceProvider.GetRequiredService<IdentitySeeder>();
     await identitySeeder.SeedDevelopmentOwnerAsync();
     await seedScope.ServiceProvider.GetRequiredService<DevelopmentFieldSeeder>().SeedAsync();
