@@ -25,6 +25,67 @@ public sealed class BookingServiceTests
     }
 
     [Fact]
+    public async Task CreateBookingAsync_WhenSourceIsCustomerAccount_CreatesPendingPaymentWithCustomerUserId()
+    {
+        var store = new InMemoryBookingStore(CreateField());
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+        var customerId = Guid.NewGuid();
+
+        var result = await service.CreateBookingAsync(ValidGuestCommand() with
+        {
+            Source = BookingSource.CustomerAccount,
+            CustomerUserId = customerId,
+            PreferredPaymentMethod = PaymentMethod.VietQr
+        });
+
+        Assert.True(result.Succeeded);
+        var booking = Assert.Single(store.Bookings);
+        Assert.Equal(BookingStatus.PendingPayment, booking.Status);
+        Assert.NotNull(booking.ExpiresAtUtc);
+        Assert.Equal(customerId, booking.CustomerUserId);
+        Assert.Contains("Quét mã VietQR", booking.Note);
+    }
+
+    [Fact]
+    public void PaymentMethodLabels_WhenNewMethodsProvided_ReturnsVietnameseLabels()
+    {
+        Assert.Equal("Quét mã VietQR", BookingLabels.PaymentMethod(PaymentMethod.VietQr));
+        Assert.Equal("Ví MoMo", BookingLabels.PaymentMethod(PaymentMethod.MoMo));
+        Assert.Equal("Ví ZaloPay", BookingLabels.PaymentMethod(PaymentMethod.ZaloPay));
+        Assert.Equal("Thẻ ngân hàng", BookingLabels.PaymentMethod(PaymentMethod.Card));
+    }
+
+    [Fact]
+    public async Task ListScheduleEventsAsync_WhenFilteredByStatus_ReturnsMatchingBookingEventsOnly()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        store.Bookings.Add(CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed));
+        store.Bookings.Add(CreateExistingBooking(field.Id, 1140, 1200, BookingStatus.PendingPayment));
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var events = await service.ListScheduleEventsAsync(new DateOnly(2026, 7, 26), new DateOnly(2026, 7, 27), null, BookingStatus.PendingPayment);
+
+        var scheduleEvent = Assert.Single(events);
+        Assert.Equal(BookingStatus.PendingPayment, scheduleEvent.Status);
+    }
+
+    [Fact]
+    public async Task ListCustomerBookingsAsync_WhenMatchingUserIdOrPhone_ReturnsCustomerBookings()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var customerId = Guid.NewGuid();
+        store.Bookings.Add(CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed));
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var bookings = await service.ListCustomerBookingsAsync(customerId, "0902 345 678");
+
+        var item = Assert.Single(bookings);
+        Assert.Equal("Trần Quốc Huy", item.CustomerName);
+    }
+
+    [Fact]
     public async Task CreateBookingAsync_WhenAdjacentToConfirmedBooking_AllowsBooking()
     {
         var field = CreateField();
@@ -367,6 +428,13 @@ public sealed class BookingServiceTests
 
         public Task<IReadOnlyList<BookingSummaryDto>> ListBookingsAsync(DateOnly? bookingDate, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<BookingSummaryDto>>([]);
+
+        public Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhoneNormalized, CancellationToken cancellationToken)
+            => Task.FromResult<IReadOnlyList<BookingSummaryDto>>(Bookings
+                .Where(booking => booking.CustomerUserId == customerUserId
+                    || (!string.IsNullOrWhiteSpace(customerPhoneNormalized) && booking.CustomerPhoneNormalized == customerPhoneNormalized))
+                .Select(ToSummary)
+                .ToArray());
 
         public Task<IReadOnlyList<BookingSummaryDto>> ListScheduleBookingsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<BookingSummaryDto>>(Bookings

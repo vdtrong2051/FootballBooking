@@ -74,6 +74,10 @@ public static class BookingLabels
             Domain.Bookings.PaymentMethod.BankTransfer => "Chuyển khoản",
             Domain.Bookings.PaymentMethod.Online => "Trực tuyến",
             Domain.Bookings.PaymentMethod.Other => "Khác",
+            Domain.Bookings.PaymentMethod.VietQr => "Quét mã VietQR",
+            Domain.Bookings.PaymentMethod.MoMo => "Ví MoMo",
+            Domain.Bookings.PaymentMethod.ZaloPay => "Ví ZaloPay",
+            Domain.Bookings.PaymentMethod.Card => "Thẻ ngân hàng",
             _ => "Không rõ"
         };
 

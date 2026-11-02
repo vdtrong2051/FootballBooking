@@ -59,7 +59,10 @@ public sealed record ScheduleEventDto(
     string Tone,
     string Url,
     bool IsBackground,
-    string? Description);
+    string? Description,
+    Guid? FieldId = null,
+    string? CustomerPhone = null,
+    string? PaymentStatusLabel = null);
 
 public sealed record ScheduleBlockDto(
     Guid Id,
@@ -82,7 +85,8 @@ public sealed record BookingSummaryDto(
     BookingStatus Status,
     PaymentStatus PaymentStatus,
     long TotalAmount,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    Guid? FieldId = null);
 
 public sealed record BookingDetailDto(
     Guid Id,

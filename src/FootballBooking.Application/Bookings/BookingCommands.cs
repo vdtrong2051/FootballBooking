@@ -14,7 +14,9 @@ public sealed record BookingCreateCommand(
     BookingSource Source,
     Guid? CreatedByUserId,
     IReadOnlyList<BookingServiceSelectionCommand>? Services = null,
-    string? PromotionCode = null);
+    string? PromotionCode = null,
+    Guid? CustomerUserId = null,
+    PaymentMethod? PreferredPaymentMethod = null);
 
 public sealed record BookingLookupQuery(string BookingCode, string CustomerPhone);
 

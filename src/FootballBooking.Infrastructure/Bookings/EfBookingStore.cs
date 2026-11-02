@@ -102,6 +102,23 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
         return bookings.Select(ToSummaryDto).ToArray();
     }
 
+    public async Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhoneNormalized, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Bookings
+            .AsNoTracking()
+            .Include(booking => booking.Field)
+            .Where(booking => booking.CustomerUserId == customerUserId
+                || (!string.IsNullOrWhiteSpace(customerPhoneNormalized) && booking.CustomerPhoneNormalized == customerPhoneNormalized));
+
+        var bookings = await query
+            .OrderByDescending(booking => booking.BookingDate)
+            .ThenByDescending(booking => booking.StartMinute)
+            .Take(50)
+            .ToListAsync(cancellationToken);
+
+        return bookings.Select(ToSummaryDto).ToArray();
+    }
+
     public async Task<IReadOnlyList<BookingSummaryDto>> ListScheduleBookingsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken)
     {
         var query = dbContext.Bookings
@@ -220,7 +237,8 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
             booking.Status,
             booking.PaymentStatus,
             booking.TotalAmount,
-            booking.CreatedAtUtc);
+            booking.CreatedAtUtc,
+            booking.FieldId);
 
     private static BookingDetailDto ToDetailDto(Booking booking)
         => new(

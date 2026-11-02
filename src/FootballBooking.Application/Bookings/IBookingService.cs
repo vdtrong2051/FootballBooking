@@ -19,8 +19,10 @@ public interface IBookingService
     Task<BookingCommandResult> CreateBookingAsync(BookingCreateCommand command, CancellationToken cancellationToken = default);
     Task<BookingDetailDto?> GetBookingByCodeAsync(string bookingCode, CancellationToken cancellationToken = default);
     Task<BookingDetailDto?> LookupBookingAsync(BookingLookupQuery query, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhone, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<BookingSummaryDto>> ListAdminBookingsAsync(DateOnly? bookingDate, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ScheduleEventDto>> ListScheduleEventsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ScheduleEventDto>> ListScheduleEventsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken = default);
     Task<BookingDetailDto?> GetAdminBookingAsync(Guid id, CancellationToken cancellationToken = default);
     Task<BookingCommandResult> ChangeStatusAsync(Guid id, BookingStatus targetStatus, CancellationToken cancellationToken = default);
     Task<BookingCommandResult> RecordPaymentAsync(BookingPaymentCommand command, CancellationToken cancellationToken = default);
