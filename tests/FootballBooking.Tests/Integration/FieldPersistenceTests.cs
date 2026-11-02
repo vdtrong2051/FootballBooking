@@ -1,10 +1,14 @@
+using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Common.Time;
 using FootballBooking.Application.Fields;
+using FootballBooking.Infrastructure;
 using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Fields;
 using FootballBooking.Infrastructure.SeedData;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FootballBooking.Tests.Integration;
 
@@ -77,6 +81,28 @@ public sealed class FieldPersistenceTests
         Assert.Equal(2, await dbContext.PromoCodes.CountAsync());
         Assert.Contains(await dbContext.Services.Select(service => service.Name).ToArrayAsync(), name => name == "Thuê trọng tài");
         Assert.Contains(await dbContext.PromoCodes.Select(promotion => promotion.Code).ToArrayAsync(), code => code == "ANPHU50");
+    }
+
+    [Fact]
+    public async Task AddInfrastructure_WhenConfiguredWithSqliteProvider_UsesSqliteAndAcquiresWriteLock()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:DefaultConnection"] = "Data Source=:memory:",
+                ["Database:Provider"] = "Sqlite"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddInfrastructure(configuration);
+
+        await using var provider = services.BuildServiceProvider();
+        var writeLock = provider.GetRequiredService<IBookingWriteLock>();
+        await using var handle = await writeLock.TryAcquireAsync(Guid.NewGuid(), new DateOnly(2026, 7, 25), TimeSpan.FromSeconds(1), CancellationToken.None);
+
+        Assert.NotNull(handle);
     }
 
     private sealed class FixedClock : ISystemClock
