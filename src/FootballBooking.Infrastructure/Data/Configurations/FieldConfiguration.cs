@@ -17,6 +17,7 @@ public sealed class FieldConfiguration : IEntityTypeConfiguration<Field>
         builder.Property(field => field.FieldType).HasMaxLength(50).IsRequired();
         builder.Property(field => field.Description).HasMaxLength(2000);
         builder.Property(field => field.Address).HasMaxLength(300);
+        builder.Property(field => field.AmenitiesJson).HasColumnType("json");
         builder.Property(field => field.Status).HasConversion<int>().IsRequired();
 
         builder.HasIndex(field => field.Code).IsUnique();
@@ -49,8 +50,8 @@ public sealed class FieldConfiguration : IEntityTypeConfiguration<Field>
 
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_Fields_MinimumBookingMinutes_Positive", "\"MinimumBookingMinutes\" > 0");
-            table.HasCheckConstraint("CK_Fields_SlotStepMinutes_Positive", "\"SlotStepMinutes\" > 0");
+            table.HasCheckConstraint("CK_Fields_MinimumBookingMinutes_Positive", "MinimumBookingMinutes > 0");
+            table.HasCheckConstraint("CK_Fields_SlotStepMinutes_Positive", "SlotStepMinutes > 0");
         });
     }
 }

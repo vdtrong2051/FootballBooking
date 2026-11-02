@@ -21,6 +21,6 @@ public sealed class PromoCodeUsageConfiguration : IEntityTypeConfiguration<Promo
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(usage => new { usage.PromoCodeId, usage.CustomerPhoneNormalized });
         builder.HasIndex(usage => usage.BookingId).IsUnique();
-        builder.ToTable(table => table.HasCheckConstraint("CK_PromoCodeUsages_DiscountAmount", "\"DiscountAmount\" >= 0"));
+        builder.ToTable(table => table.HasCheckConstraint("CK_PromoCodeUsages_DiscountAmount", "DiscountAmount >= 0"));
     }
 }

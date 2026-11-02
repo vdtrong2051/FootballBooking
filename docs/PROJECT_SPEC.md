@@ -14,7 +14,7 @@
 - Website giới thiệu và đặt sân cho khách hàng.
 - Hệ thống quản trị nội bộ cho chủ sân và nhân viên.
 
-Hệ thống là một ứng dụng ASP.NET Core MVC duy nhất, dùng chung backend và SQLite nhưng tách giao diện bằng route và ASP.NET Core Area.
+Hệ thống là một ứng dụng ASP.NET Core MVC duy nhất, dùng chung backend và MySQL nhưng tách giao diện bằng route và ASP.NET Core Area.
 
 ### 1.3. Mục tiêu kinh doanh
 
@@ -439,8 +439,9 @@ Tra cứu / mở booking
 
 ### 7.4. Khả năng mở rộng
 
-- Có thể đổi SQLite sang PostgreSQL hoặc SQL Server.
-- Không viết SQL phụ thuộc SQLite nếu không cần.
+- MySQL là database server chính; có thể mở rộng nhiều web instance.
+- Cô lập SQL đặc thù MySQL trong Infrastructure.
+- Tách external notification/payment qua interface.
 - Tách external notification/payment qua interface.
 - Không triển khai nhiều cơ sở trong v1 nhưng tránh hard-code tên cơ sở ở logic.
 

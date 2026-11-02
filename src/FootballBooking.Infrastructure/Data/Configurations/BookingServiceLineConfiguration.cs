@@ -24,8 +24,8 @@ public sealed class BookingServiceLineConfiguration : IEntityTypeConfiguration<B
         builder.HasIndex(line => line.BookingId);
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_BookingServices_Quantity", "\"Quantity\" > 0");
-            table.HasCheckConstraint("CK_BookingServices_Amounts", "\"UnitPrice\" >= 0 AND \"LineTotal\" >= 0");
+            table.HasCheckConstraint("CK_BookingServices_Quantity", "Quantity > 0");
+            table.HasCheckConstraint("CK_BookingServices_Amounts", "UnitPrice >= 0 AND LineTotal >= 0");
         });
     }
 }

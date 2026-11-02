@@ -2,15 +2,15 @@
 
 ## 1. Tổng quan
 
-- Database engine: SQLite.
-- ORM: Entity Framework Core 10.
+- Database engine: MySQL 8.4+.
+- ORM: Entity Framework Core 10 với Pomelo provider.
 - Identity: ASP.NET Core Identity với khóa `Guid`.
 - Migrations: lưu trong `FootballBooking.Infrastructure`.
 - Tiền: `long` theo VND.
 - Audit timestamp: UTC.
 - Booking schedule: `DateOnly + StartMinute + EndMinute`.
 
-JSON không thay SQLite.
+JSON không thay MySQL.
 
 ---
 
@@ -547,11 +547,12 @@ src/FootballBooking.Infrastructure/SeedData/pricing-rules.json
 
 ## 16. Backup và migration tương lai
 
-SQLite file không đặt trong `wwwroot`.
+Connection string MySQL không lưu mật khẩu production trong repository; dùng Secret Manager hoặc biến môi trường.
 
-Khi chuyển sang PostgreSQL/SQL Server:
+Khi nâng cấp hoặc đổi database provider:
 
-- Giữ entity và service.
-- Thay provider.
+- Giữ entity và application service.
+- Thay provider trong Infrastructure.
+- Tạo lại migration theo provider đích.
 - Rà soát DateOnly, enum, index và concurrency.
-- Loại bỏ keyed process lock và dùng transaction/isolation hoặc database locking phù hợp.
+- Giữ cơ chế khóa database phù hợp với provider.

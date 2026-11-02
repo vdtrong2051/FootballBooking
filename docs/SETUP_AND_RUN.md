@@ -70,9 +70,9 @@ Kiểm tra:
 dotnet ef --version
 ```
 
-### 1.5. SQLite viewer, tùy chọn
+### 1.5. MySQL
 
-Cài DB Browser for SQLite hoặc SQLiteStudio để xem dữ liệu. Không dùng viewer để thay migration.
+Cài MySQL Server 8.4+ hoặc chạy MySQL bằng Docker. Có thể dùng MySQL Workbench/DBeaver để xem dữ liệu, nhưng không dùng công cụ GUI thay cho EF Core migration.
 
 ---
 
@@ -173,7 +173,7 @@ Xóa file mẫu `Class1.cs` trong các class library khi bắt đầu code thậ
 Cài vào Infrastructure:
 
 ```powershell
-dotnet add src/FootballBooking.Infrastructure package Microsoft.EntityFrameworkCore.Sqlite
+dotnet add src/FootballBooking.Infrastructure package Pomelo.EntityFrameworkCore.MySql
 dotnet add src/FootballBooking.Infrastructure package Microsoft.EntityFrameworkCore.Design
 dotnet add src/FootballBooking.Infrastructure package Microsoft.AspNetCore.Identity.EntityFrameworkCore
 ```
@@ -390,7 +390,7 @@ Khi đến Phase 8, tạo entry riêng như `Scripts/admin-schedule.js` và impo
 
 ---
 
-## 9. Identity và SQLite setup — thực hiện Phase 1
+## 9. Identity và MySQL setup — thực hiện Phase 1
 
 Không làm trong Phase 0 nếu chưa được task cho phép.
 
@@ -399,7 +399,10 @@ Connection string gợi ý:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=App_Data/football-booking.db"
+    "DefaultConnection": "Server=localhost;Port=3306;Database=football_booking;User=footballbooking;Password=your-local-password;SslMode=Preferred;AllowPublicKeyRetrieval=True"
+  },
+  "Database": {
+    "ServerVersion": "8.4.0"
   },
   "Business": {
     "TimeZoneId": "Asia/Ho_Chi_Minh"
@@ -413,13 +416,11 @@ Connection string gợi ý:
 }
 ```
 
-Tạo thư mục:
+Không commit mật khẩu production. Ưu tiên cấu hình local bằng User Secrets:
 
 ```powershell
-mkdir src/FootballBooking.Web/App_Data
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3306;Database=football_booking;User=footballbooking;Password=your-local-password" --project src/FootballBooking.Web
 ```
-
-Không đặt database trong `wwwroot`.
 
 Migration commands:
 
@@ -545,12 +546,12 @@ dotnet tool update --global dotnet-ef
 
 Mở terminal mới.
 
-### SQLite database locked
+### Không kết nối được MySQL
 
-- Kiểm tra có nhiều app instance cùng ghi.
-- Dừng app/debug cũ.
-- Không mở transaction lâu.
-- Không chỉnh DB bằng viewer khi app đang ghi.
+- Kiểm tra MySQL đang chạy và port 3306 có thể truy cập.
+- Kiểm tra database/user/quyền truy cập trong connection string.
+- Đặt `Database:ServerVersion` đúng phiên bản server.
+- Dùng User Secrets hoặc biến môi trường thay vì commit mật khẩu thật.
 
 ### Tailwind không sinh class
 

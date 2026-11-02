@@ -31,13 +31,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # =========================
-# Database và dữ liệu local
+# Database dumps và dữ liệu local
 # =========================
-**/App_Data/*.db
-**/App_Data/*.db-shm
-**/App_Data/*.db-wal
-**/App_Data/*.sqlite
-**/App_Data/*.sqlite3
+*.sql
+*.sql.gz
 
 # =========================
 # Biến môi trường và bí mật

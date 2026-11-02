@@ -97,24 +97,18 @@ Nếu phương thức “trả tại sân” được phép và không cần c�
 
 ---
 
-## BR-006 — SQLite write coordination
-
-Phiên bản đầu chạy một app instance.
+## BR-006 — MySQL booking write coordination
 
 Khi tạo booking cho cùng `FieldId + BookingDate`:
 
-1. Lấy keyed process lock.
-2. Mở transaction.
-3. Query lại active overlap.
-4. Tính lại giá và promo.
-5. Insert booking và usage.
-6. SaveChanges.
-7. Commit.
-8. Nhả lock.
+1. Lấy MySQL advisory lock bằng khóa nghiệp vụ.
+2. Query lại active overlap sau khi đã giữ lock.
+3. Tính lại giá và promo.
+4. Insert booking và usage.
+5. SaveChanges.
+6. Nhả lock cùng connection đã giữ lock.
 
-Nếu không lấy được lock trong timeout hợp lý, trả thông báo thử lại.
-
-Rule này không thay thế database server khi chạy nhiều instance.
+Nếu không lấy được lock trong timeout hợp lý, trả thông báo thử lại. Advisory lock nằm ở database server nên phối hợp được giữa nhiều web instance dùng cùng MySQL.
 
 ---
 

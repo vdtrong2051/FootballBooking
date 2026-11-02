@@ -48,7 +48,7 @@ npm run build = pass
 
 ### Kết quả
 
-- SQLite.
+- MySQL.
 - Identity Guid.
 - Roles.
 - Owner seed.
@@ -59,7 +59,7 @@ npm run build = pass
 
 - [ ] ApplicationUser.
 - [ ] ApplicationDbContext.
-- [ ] SQLite connection.
+- [ ] MySQL connection.
 - [ ] Role seed idempotent.
 - [ ] Owner seed qua secrets/env.
 - [ ] Identity cookie paths.
