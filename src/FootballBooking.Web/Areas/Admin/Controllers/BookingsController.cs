@@ -34,11 +34,14 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     }
 
     [HttpGet("create")]
-    public async Task<IActionResult> Create(CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(Guid? fieldId = null, string? date = null, int? startMinute = null, CancellationToken cancellationToken = default)
     {
         var model = new BookingCreateViewModel
         {
-            BookingDateText = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
+            BookingDateText = (DateOnly.TryParseExact(date, ["dd/MM/yyyy", "yyyy-MM-dd"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate) ? parsedDate : DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+            StartMinute = startMinute is >= 360 and <= 1350 ? startMinute.Value : 1080,
+            EndMinute = startMinute is >= 360 and <= 1350 ? Math.Min(1380, startMinute.Value + 60) : 1140,
+            FieldId = fieldId.GetValueOrDefault()
         };
         await PopulateCreateModelAsync(model, cancellationToken);
         await PopulateAvailabilityAndQuoteAsync(model, cancellationToken);

@@ -155,6 +155,36 @@ public sealed class FieldRoutesTests
         Assert.Contains("ZaloPay", html);
     }
 
+    [Fact]
+    public async Task AdminScheduleAndBookingCreate_WhenFilteredAndPrefilled_ApplyStatusDateAndSlotParameters()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var bookingService = scope.ServiceProvider.GetRequiredService<FootballBooking.Application.Bookings.IBookingService>();
+        var fieldService = scope.ServiceProvider.GetRequiredService<FootballBooking.Application.Fields.IFieldService>();
+        var fields = await fieldService.ListAdminFieldsAsync();
+        var fieldId = fields[0].Id;
+
+        var scheduleController = new FootballBooking.Web.Areas.Admin.Controllers.ScheduleController(bookingService, fieldService);
+        var indexResult = Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(
+            await scheduleController.Index(fieldId, FootballBooking.Domain.Bookings.BookingStatus.PendingPayment, "2026-07-26", CancellationToken.None));
+        var scheduleModel = Assert.IsType<FootballBooking.Web.ViewModels.Bookings.AdminScheduleViewModel>(indexResult.Model);
+
+        Assert.Equal(fieldId, scheduleModel.FieldId);
+        Assert.Equal(FootballBooking.Domain.Bookings.BookingStatus.PendingPayment, scheduleModel.Status);
+        Assert.Equal("2026-07-26", scheduleModel.InitialDateText);
+
+        var bookingsController = new FootballBooking.Web.Areas.Admin.Controllers.BookingsController(bookingService, fieldService);
+        var createResult = Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(
+            await bookingsController.Create(fieldId, "2026-07-26", 1080, CancellationToken.None));
+        var createModel = Assert.IsType<FootballBooking.Web.ViewModels.Bookings.BookingCreateViewModel>(createResult.Model);
+
+        Assert.Equal(fieldId, createModel.FieldId);
+        Assert.Equal("26/07/2026", createModel.BookingDateText);
+        Assert.Equal(1080, createModel.StartMinute);
+        Assert.Equal(1140, createModel.EndMinute);
+    }
+
     private static async Task<FieldRouteFactory> CreateSeededFactoryAsync()
     {
         var factory = new FieldRouteFactory();

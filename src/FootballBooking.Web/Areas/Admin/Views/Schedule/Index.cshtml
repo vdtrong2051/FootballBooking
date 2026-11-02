@@ -1,46 +1,86 @@
-﻿@model AdminScheduleViewModel
+@model AdminScheduleViewModel
+@using FootballBooking.Domain.Bookings
 @{
     ViewData["Title"] = "Lịch sân";
+    var statuses = new[]
+    {
+        BookingStatus.PendingPayment,
+        BookingStatus.Confirmed,
+        BookingStatus.CheckedIn,
+        BookingStatus.InProgress,
+        BookingStatus.Completed,
+        BookingStatus.Cancelled,
+        BookingStatus.NoShow
+    };
 }
 
 <div class="space-y-5">
     <section class="fb-card p-4">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <h1 class="text-xl font-semibold text-ink">Lịch sân</h1>
-                <p class="mt-1 text-sm text-muted">Màn hình điều phối chính cho nhân viên: theo dõi ca sân, mở booking cần xử lý và thực hiện bước tiếp theo.</p>
+                <h1 class="text-xl font-semibold text-ink">Lịch điều phối sân bóng</h1>
+                <p class="mt-1 text-sm text-muted">Theo dõi ca sân theo thời gian thực, lọc theo trạng thái và bấm trực tiếp vào khung giờ trống trên lịch để tạo booking nhanh tại quầy.</p>
             </div>
-            <form class="grid gap-3 sm:grid-cols-[minmax(180px,260px)_auto]" method="get">
-                <div>
-                    <label class="fb-label" for="fieldId">Sân bóng</label>
-                    <select class="fb-input" id="fieldId" name="fieldId">
-                        <option value="">Tất cả sân</option>
-                        @foreach (var field in Model.Fields)
-                        {
-                            <option value="@field.Id" selected="@(Model.FieldId == field.Id)">@field.Name</option>
-                        }
-                    </select>
-                </div>
-                <button class="fb-button fb-button-secondary self-end justify-center" type="submit">Lọc lịch</button>
-            </form>
+            <div class="flex flex-wrap gap-2">
+                <a class="fb-button fb-button-primary" href="/admin/bookings/create?fieldId=@Model.FieldId&amp;date=@Model.InitialDateText">
+                    <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model='new HeroIconViewModel("plus")' />
+                    <span>Tạo booking nhanh</span>
+                </a>
+            </div>
         </div>
+
+        <form class="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_minmax(160px,200px)_auto]" method="get">
+            <div>
+                <label class="fb-label" for="fieldId">Sân bóng</label>
+                <select class="fb-input" id="fieldId" name="fieldId">
+                    <option value="">Tất cả sân</option>
+                    @foreach (var field in Model.Fields)
+                    {
+                        <option value="@field.Id" selected="@(Model.FieldId == field.Id)">@field.Name</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="fb-label" for="status">Trạng thái booking</label>
+                <select class="fb-input" id="status" name="status">
+                    <option value="">Tất cả trạng thái hiển thị</option>
+                    @foreach (var status in statuses)
+                    {
+                        <option value="@status" selected="@(Model.Status == status)">@BookingLabels.Status(status)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="fb-label" for="date">Ngày xem lịch</label>
+                <input class="fb-input" id="date" name="date" type="date" value="@Model.InitialDateText" />
+            </div>
+            <div class="flex items-end gap-2">
+                <button class="fb-button fb-button-secondary justify-center" type="submit">Lọc lịch</button>
+                <a class="fb-button fb-button-secondary justify-center" href="/admin/schedule">Đặt lại</a>
+            </div>
+        </form>
     </section>
 
     <div class="grid gap-5 min-[1120px]:grid-cols-[1fr_360px]">
         <section class="order-2 fb-card p-4 min-[1120px]:order-1">
-            <div class="mb-4 flex flex-wrap items-center gap-2 text-xs">
-                <span class="rounded-ui border border-amber-200 bg-amber-50 px-2 py-1 font-medium text-amber-800">Chờ cọc / đang sử dụng</span>
-                <span class="rounded-ui border border-blue-200 bg-blue-50 px-2 py-1 font-medium text-blue-800">Đã xác nhận</span>
-                <span class="rounded-ui border border-violet-200 bg-violet-50 px-2 py-1 font-medium text-violet-800">Khách đã đến</span>
-                <span class="rounded-ui border border-green-200 bg-green-50 px-2 py-1 font-medium text-green-800">Đã hoàn thành</span>
-                <span class="rounded-ui border border-slate-300 bg-slate-100 px-2 py-1 font-medium text-slate-700">Khách không đến / khóa sân</span>
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="rounded-ui border border-amber-200 bg-amber-50 px-2 py-1 font-medium text-amber-800">Chờ cọc / đang sử dụng</span>
+                    <span class="rounded-ui border border-blue-200 bg-blue-50 px-2 py-1 font-medium text-blue-800">Đã xác nhận</span>
+                    <span class="rounded-ui border border-violet-200 bg-violet-50 px-2 py-1 font-medium text-violet-800">Khách đã đến</span>
+                    <span class="rounded-ui border border-green-200 bg-green-50 px-2 py-1 font-medium text-green-800">Đã hoàn thành</span>
+                    <span class="rounded-ui border border-slate-300 bg-slate-100 px-2 py-1 font-medium text-slate-700">Khách không đến / khóa sân</span>
+                </div>
+                <span class="text-muted">Mẹo: Bấm vào ô giờ trống trên lịch để tạo booking mới</span>
             </div>
 
             <div
                 id="admin-schedule-calendar"
                 class="min-h-[620px]"
                 data-events-url="/admin/api/schedule/events"
+                data-create-url="/admin/bookings/create"
                 data-field-id="@Model.FieldId"
+                data-status="@Model.Status"
                 data-initial-date="@Model.InitialDateText">
                 <partial name="~/Views/Shared/Partials/_EmptyState.cshtml" model='new EmptyStateViewModel("Đang tải lịch sân", "Nếu lịch không hiển thị, vui lòng tải lại trang hoặc kiểm tra kết nối nội bộ.", IconName: "calendar")' />
             </div>
@@ -76,10 +116,10 @@
             </section>
 
             <section class="fb-card p-4">
-                <h2 class="font-semibold text-ink">Cách thao tác</h2>
+                <h2 class="font-semibold text-ink">Cách thao tác nhanh</h2>
                 <ol class="mt-3 grid gap-2 text-sm text-muted">
-                    <li><span class="font-semibold text-ink">1.</span> Chọn booking trên lịch hoặc trong danh sách cần xử lý.</li>
-                    <li><span class="font-semibold text-ink">2.</span> Mở chi tiết booking để xem bước tiếp theo theo trạng thái.</li>
+                    <li><span class="font-semibold text-ink">1.</span> Bấm vào một khung giờ trống trên lịch tuần/ngày để mở form tạo booking đã điền sẵn sân, ngày và giờ bắt đầu.</li>
+                    <li><span class="font-semibold text-ink">2.</span> Chọn booking trên lịch hoặc trong danh sách cần xử lý để xem thông tin SĐT và thanh toán.</li>
                     <li><span class="font-semibold text-ink">3.</span> Ghi nhận thanh toán, check-in, bắt đầu sử dụng hoặc quyết toán theo đúng luồng.</li>
                 </ol>
             </section>

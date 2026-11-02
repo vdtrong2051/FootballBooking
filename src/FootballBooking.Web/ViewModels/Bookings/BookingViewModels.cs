@@ -288,6 +288,7 @@ public sealed class AdminScheduleViewModel
     public IReadOnlyList<AdminScheduleWorkItemViewModel> WorkItems { get; set; } = [];
     public Guid? FieldId { get; set; }
     public string InitialDateText { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    public BookingStatus? Status { get; set; }
 }
 
 public sealed class AdminScheduleWorkItemViewModel
