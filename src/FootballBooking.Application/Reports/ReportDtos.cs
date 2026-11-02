@@ -61,6 +61,19 @@ public sealed record StaffDashboardDto(
     IReadOnlyList<ServicePreparationDto> ServicePreparation,
     IReadOnlyList<ReportFieldBlockDto> FieldBlocks);
 
-public sealed record ChartDatasetDto(string Label, string Type, IReadOnlyList<long> Data, string Tone);
+public sealed record WaterfallStepDto(
+    string Label,
+    long Delta,
+    long Start,
+    long End,
+    string Tone,
+    bool IsTotal = false);
+
+public sealed record ChartDatasetDto(
+    string Label,
+    string Type,
+    IReadOnlyList<long> Data,
+    string Tone,
+    IReadOnlyList<WaterfallStepDto>? WaterfallSteps = null);
 
 public sealed record ChartDataDto(IReadOnlyList<string> Labels, IReadOnlyList<ChartDatasetDto> Datasets);

@@ -30,6 +30,14 @@ public sealed class DashboardController(IReportService reportService) : Controll
         return Json(await reportService.GetRevenueChartAsync(fromDate, toDate, cancellationToken));
     }
 
+    [HttpGet("/admin/api/dashboard/revenue-waterfall")]
+    [Authorize(Policy = "OwnerOnly")]
+    public async Task<IActionResult> RevenueWaterfall([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
+    {
+        var (fromDate, toDate) = ResolveRange(from, to);
+        return Json(await reportService.GetRevenueWaterfallChartAsync(fromDate, toDate, cancellationToken));
+    }
+
     [HttpGet("/admin/api/dashboard/bookings")]
     public async Task<IActionResult> Bookings([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
     {

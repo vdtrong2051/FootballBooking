@@ -125,9 +125,92 @@ public sealed class ReportService(IReportStore store, ISystemClock clock) : IRep
         var range = NormalizeRange(fromDate, toDate);
         var bookings = await store.ListBookingsAsync(range.FromDate, range.EndExclusive, cancellationToken);
         var points = BuildDailyPoints(bookings, range);
+
+        var filteredPoints = points.Count > 14 && points.Any(point => point.RevenueAmount != 0)
+            ? points.Where(point => point.RevenueAmount != 0).ToArray()
+            : points.ToArray();
+
+        var steps = new List<WaterfallStepDto>();
+        long runningTotal = 0;
+        foreach (var point in filteredPoints)
+        {
+            var start = runningTotal;
+            runningTotal += point.RevenueAmount;
+            steps.Add(new WaterfallStepDto(
+                FormatDate(point.Date),
+                point.RevenueAmount,
+                start,
+                runningTotal,
+                point.RevenueAmount >= 0 ? "success" : "danger",
+                IsTotal: false));
+        }
+
+        steps.Add(new WaterfallStepDto(
+            "Tổng thực thu",
+            runningTotal,
+            0,
+            runningTotal,
+            "info",
+            IsTotal: true));
+
         return new ChartDataDto(
-            points.Select(point => FormatDate(point.Date)).ToArray(),
-            [new ChartDatasetDto("Doanh thu", "line", points.Select(point => point.RevenueAmount).ToArray(), "success")]);
+            steps.Select(step => step.Label).ToArray(),
+            [
+                new ChartDatasetDto(
+                    "Doanh thu thác nước",
+                    "waterfall",
+                    steps.Select(step => step.Delta).ToArray(),
+                    "success",
+                    steps)
+            ]);
+    }
+
+    public async Task<ChartDataDto> GetRevenueWaterfallChartAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+    {
+        var range = NormalizeRange(fromDate, toDate);
+        var bookings = await store.ListBookingsAsync(range.FromDate, range.EndExclusive, cancellationToken);
+        var activeBookings = bookings.Where(IsOperationalHistory).ToArray();
+        var cancelledWithFee = bookings.Where(booking => booking.Status == BookingStatus.Cancelled && booking.CancellationFeeAmount > 0).ToArray();
+
+        var courtTotal = activeBookings.Sum(booking => booking.CourtAmount);
+        var serviceTotal = activeBookings.Sum(booking => booking.ServiceAmount);
+        var discountTotal = activeBookings.Sum(booking => booking.DiscountAmount);
+        var cancellationFeeTotal = activeBookings.Sum(booking => booking.CancellationFeeAmount) + cancelledWithFee.Sum(booking => booking.CancellationFeeAmount);
+        var refundedTotal = activeBookings.Sum(booking => booking.RefundedAmount);
+        var remainingTotal = activeBookings.Sum(RemainingAmount);
+        var netPaidTotal = activeBookings.Sum(NetPaid);
+
+        var rawDeltas = new (string Label, long Delta, string Tone)[]
+        {
+            ("Tiền sân", courtTotal, "success"),
+            ("Dịch vụ", serviceTotal, "info"),
+            ("Khuyến mãi", -discountTotal, "warning"),
+            ("Phí hủy", cancellationFeeTotal, "active"),
+            ("Hoàn trả", -refundedTotal, "danger"),
+            ("Còn phải thu", -remainingTotal, "warning")
+        };
+
+        var steps = new List<WaterfallStepDto>();
+        long running = 0;
+        foreach (var item in rawDeltas)
+        {
+            var start = running;
+            running += item.Delta;
+            steps.Add(new WaterfallStepDto(item.Label, item.Delta, start, running, item.Tone, IsTotal: false));
+        }
+
+        steps.Add(new WaterfallStepDto("Thực thu ròng", netPaidTotal, 0, netPaidTotal, "info", IsTotal: true));
+
+        return new ChartDataDto(
+            steps.Select(step => step.Label).ToArray(),
+            [
+                new ChartDatasetDto(
+                    "Cơ cấu doanh thu (Thác nước)",
+                    "waterfall",
+                    steps.Select(step => step.Delta).ToArray(),
+                    "info",
+                    steps)
+            ]);
     }
 
     public async Task<ChartDataDto> GetBookingCountChartAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
