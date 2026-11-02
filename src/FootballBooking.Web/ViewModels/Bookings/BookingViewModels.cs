@@ -38,6 +38,9 @@ public sealed class BookingCreateViewModel
     [Display(Name = "Mã khuyến mãi")]
     public string? PromotionCode { get; set; }
 
+    [Display(Name = "Phương thức thanh toán")]
+    public PaymentMethod PreferredPaymentMethod { get; set; } = PaymentMethod.VietQr;
+
     public List<BookingServiceSelectionViewModel> Services { get; set; } = [];
     public IReadOnlyList<FieldSummaryDto> Fields { get; set; } = [];
     public IReadOnlyList<BookingSlotDto> Slots { get; set; } = [];

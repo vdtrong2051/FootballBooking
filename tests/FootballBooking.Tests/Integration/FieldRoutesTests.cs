@@ -125,6 +125,36 @@ public sealed class FieldRoutesTests
         Assert.Equal("/admin/login", apiResponse.Headers.Location?.AbsolutePath);
     }
 
+    [Fact]
+    public async Task CustomerAccountRoutes_WhenRequested_RenderLoginAndRegisterPages()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var loginResponse = await client.GetAsync("/account/login");
+        var registerResponse = await client.GetAsync("/account/register");
+        var bookingsAnonymousResponse = await client.GetAsync("/account/bookings");
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, bookingsAnonymousResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task BookingPage_WhenRendered_ShowsNewPaymentMethodOptions()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/booking");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("VietQR", html);
+        Assert.Contains("MoMo", html);
+        Assert.Contains("ZaloPay", html);
+    }
+
     private static async Task<FieldRouteFactory> CreateSeededFactoryAsync()
     {
         var factory = new FieldRouteFactory();

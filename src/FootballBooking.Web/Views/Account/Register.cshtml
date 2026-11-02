@@ -1,0 +1,59 @@
+@model CustomerRegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<section class="fb-container py-10">
+    <div class="mx-auto max-w-lg fb-card p-6">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand-800">Tài khoản khách hàng</p>
+        <h1 class="mt-2 text-2xl font-semibold text-ink">Tạo tài khoản đặt sân</h1>
+        <p class="mt-2 text-sm text-muted">Lưu thông tin liên hệ, xem lại các lượt đặt sân trước đó và đặt sân nhanh chỉ trong vài giây.</p>
+
+        <form class="mt-6 space-y-4" method="post" action="/account/register">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="rounded-ui border border-red-200 bg-red-50 p-3 text-sm text-red-800"></div>
+
+            <div>
+                <label class="fb-label" asp-for="FullName"></label>
+                <input class="fb-input" asp-for="FullName" autocomplete="name" placeholder="Nguyễn Minh Tuấn" />
+                <span class="text-xs text-red-700" asp-validation-for="FullName"></span>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="fb-label" asp-for="PhoneNumber"></label>
+                    <input class="fb-input" asp-for="PhoneNumber" autocomplete="tel" placeholder="0901234567" />
+                    <span class="text-xs text-red-700" asp-validation-for="PhoneNumber"></span>
+                </div>
+                <div>
+                    <label class="fb-label" asp-for="Email"></label>
+                    <input class="fb-input" asp-for="Email" autocomplete="email" placeholder="khach@example.local" />
+                    <span class="text-xs text-red-700" asp-validation-for="Email"></span>
+                </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="fb-label" asp-for="Password"></label>
+                    <input class="fb-input" asp-for="Password" type="password" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+                    <span class="text-xs text-red-700" asp-validation-for="Password"></span>
+                </div>
+                <div>
+                    <label class="fb-label" asp-for="ConfirmPassword"></label>
+                    <input class="fb-input" asp-for="ConfirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+                    <span class="text-xs text-red-700" asp-validation-for="ConfirmPassword"></span>
+                </div>
+            </div>
+
+            <button class="fb-button fb-button-primary w-full justify-center" type="submit">Hoàn tất đăng ký</button>
+        </form>
+
+        <div class="mt-6 border-t border-line pt-4 text-center text-sm text-muted">
+            Đã có tài khoản?
+            <a class="font-semibold text-brand-800 hover:underline" href="/account/login">Đăng nhập</a>
+        </div>
+    </div>
+</section>
+
+<partial name="_ValidationScriptsPartial" />

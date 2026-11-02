@@ -10,6 +10,7 @@ using FootballBooking.Infrastructure.Reports;
 using FootballBooking.Infrastructure.SeedData;
 using FootballBooking.Infrastructure.Time;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,8 +28,11 @@ public static class DependencyInjection
         var connectionString = MySqlDatabaseConfiguration.GetConnectionString(configuration);
         var isSqlite = MySqlDatabaseConfiguration.IsSqlite(connectionString, databaseOptions);
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            MySqlDatabaseConfiguration.Configure(options, connectionString, databaseOptions));
+        var dbOptionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        MySqlDatabaseConfiguration.Configure(dbOptionsBuilder, connectionString, databaseOptions);
+        services.AddSingleton(dbOptionsBuilder.Options);
+        services.AddSingleton<DbContextOptions>(sp => sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
+        services.AddDbContext<ApplicationDbContext>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
@@ -44,14 +48,15 @@ public static class DependencyInjection
         services.AddScoped<IdentitySeeder>();
 
         services.AddSingleton<ISystemClock, SystemClock>();
-        if (isSqlite)
+        services.AddSingleton<SqliteBookingWriteLock>();
+        services.AddSingleton<IBookingWriteLock>(sp =>
         {
-            services.AddSingleton<IBookingWriteLock, SqliteBookingWriteLock>();
-        }
-        else
-        {
-            services.AddSingleton<IBookingWriteLock>(_ => new MySqlBookingWriteLock(connectionString));
-        }
+            var options = sp.GetService<DbContextOptions<ApplicationDbContext>>();
+            var usesSqlite = isSqlite || (options?.Extensions.Any(ext => ext.GetType().Name.Contains("Sqlite", StringComparison.OrdinalIgnoreCase)) ?? false);
+            return usesSqlite
+                ? sp.GetRequiredService<SqliteBookingWriteLock>()
+                : new MySqlBookingWriteLock(connectionString);
+        });
 
         services.AddScoped<IFieldStore, EfFieldStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();

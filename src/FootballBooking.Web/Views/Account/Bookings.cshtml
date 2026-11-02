@@ -1,0 +1,57 @@
+@model CustomerBookingsViewModel
+@{
+    ViewData["Title"] = "Lịch đặt của tôi";
+}
+@functions {
+    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
+    private static string FormatMinute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
+}
+
+<section class="border-b border-line bg-white">
+    <div class="fb-container flex flex-col gap-3 py-8 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-800">Tài khoản khách hàng</p>
+            <h1 class="mt-1 text-2xl font-semibold text-ink">Lịch đặt sân của @Model.CustomerName</h1>
+            <p class="mt-1 text-sm text-muted">Số điện thoại: @(Model.CustomerPhone ?? "Chưa cập nhật") · Email: @(Model.CustomerEmail ?? "Chưa cập nhật")</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a class="fb-button fb-button-primary" href="/booking">Đặt sân mới</a>
+            <form method="post" action="/account/logout">
+                @Html.AntiForgeryToken()
+                <button class="fb-button fb-button-secondary" type="submit">Đăng xuất</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<section class="fb-container py-8">
+    @if (Model.Bookings.Count == 0)
+    {
+        <div class="fb-card p-6">
+            <partial name="Partials/_EmptyState" model='new EmptyStateViewModel("Chưa có lượt đặt sân nào", "Bạn chưa có booking nào gắn với tài khoản hoặc số điện thoại này.", "Đặt sân ngay", "/booking", "calendar")' />
+        </div>
+    }
+    else
+    {
+        <div class="grid gap-4">
+            @foreach (var booking in Model.Bookings)
+            {
+                <article class="fb-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-ink">@booking.BookingCode</span>
+                            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.Status(booking.Status), BookingLabels.StatusTone(booking.Status))' />
+                            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.PaymentStatus(booking.PaymentStatus), booking.PaymentStatus == PaymentStatus.Paid ? "success" : "warning")' />
+                        </div>
+                        <p class="mt-1 text-sm font-medium text-ink">@booking.FieldName · @booking.BookingDate.ToString("dd/MM/yyyy") (@FormatMinute(booking.StartMinute) - @FormatMinute(booking.EndMinute))</p>
+                        <p class="mt-1 text-xs text-muted">Tổng tiền: @FormatMoney(booking.TotalAmount) · Tạo lúc: @booking.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a class="fb-button fb-button-secondary" href="/booking/success/@booking.BookingCode">Chi tiết &amp; QR thanh toán</a>
+                        <a class="fb-button fb-button-primary" href="/booking?fieldId=@booking.FieldId&amp;startMinute=@booking.StartMinute">Đặt lại khung giờ này</a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
