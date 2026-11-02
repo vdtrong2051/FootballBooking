@@ -17,8 +17,8 @@ public sealed class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>
         builder.HasIndex(promotion => new { promotion.IsActive, promotion.StartsAtUtc, promotion.EndsAtUtc });
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_PromoCodes_DiscountValue", "\"DiscountValue\" > 0");
-            table.HasCheckConstraint("CK_PromoCodes_Amounts", "\"MinimumOrderAmount\" >= 0 AND (\"MaximumDiscountAmount\" IS NULL OR \"MaximumDiscountAmount\" >= 0)");
+            table.HasCheckConstraint("CK_PromoCodes_DiscountValue", "DiscountValue > 0");
+            table.HasCheckConstraint("CK_PromoCodes_Amounts", "MinimumOrderAmount >= 0 AND (MaximumDiscountAmount IS NULL OR MaximumDiscountAmount >= 0)");
         });
     }
 }

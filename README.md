@@ -179,7 +179,8 @@ Controller chỉ tiếp nhận request, kiểm tra dữ liệu đầu vào và �
 
 ### Dữ liệu và kiểm thử
 
-- SQLite
+- MySQL 8.4+
+- Pomelo Entity Framework Core provider
 - Entity Framework Core Migrations
 - xUnit
 - ASP.NET Core Integration Testing

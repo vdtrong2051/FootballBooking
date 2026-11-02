@@ -18,11 +18,12 @@ Kiểm thử tập trung vào rủi ro lớn nhất:
 
 - xUnit.
 - `Microsoft.AspNetCore.Mvc.Testing`.
-- EF Core SQLite in-memory hoặc file tạm.
+- EF Core SQLite in-memory cho test integration nhanh, không phải provider production.
+- MySQL test database/Testcontainers cho migration và hành vi đặc thù provider.
 - Built-in assertions; chỉ thêm FluentAssertions/Moq/NSubstitute nếu team chọn và ghi rõ.
 - TestClock thay cho thời gian thật.
 
-Không dùng EF Core InMemory provider cho test cần kiểm tra behavior relational, unique index, transaction hoặc SQLite mapping.
+Không dùng EF Core InMemory provider cho test cần kiểm tra behavior relational, unique index hoặc transaction. Hành vi đặc thù MySQL phải được kiểm tra bằng MySQL thật trong CI.
 
 ---
 
@@ -210,7 +211,7 @@ Test role constraints if transition service receives actor context.
 - Status update.
 - Audit.
 
-### INT-009 SQLite unique constraints
+### INT-009 MySQL unique constraints
 
 ### INT-010 Migration creates database
 
@@ -226,9 +227,9 @@ Expected:
 - Request còn lại nhận conflict.
 - Không có hai active bookings trùng.
 
-Test dùng cùng service instance/keyed lock và SQLite database thực tạm.
+Test production-level dùng MySQL advisory lock với hai connection độc lập.
 
-Ghi rõ test này bảo vệ một application instance, không chứng minh multi-instance safety.
+Test SQLite in-memory chỉ bao phủ luồng MVC và persistence chung, không chứng minh multi-instance safety.
 
 ---
 

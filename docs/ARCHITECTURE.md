@@ -8,7 +8,7 @@ Kiến trúc phải:
 - Giữ logic nghiệp vụ tách khỏi Controller và Razor View.
 - Dễ kiểm thử.
 - Không phức tạp như microservices hoặc enterprise architecture quá mức.
-- Cho phép đổi SQLite sang PostgreSQL hoặc SQL Server sau này.
+- Dùng MySQL để hỗ trợ database server và nhiều web instance.
 - Hỗ trợ website công khai và Admin Area trong cùng ứng dụng.
 
 ---
@@ -36,7 +36,7 @@ Application Services
         EF Core / Identity / JSON / Email
                     │
                     ▼
-                  SQLite
+                  MySQL
 ```
 
 Không dùng:
@@ -152,12 +152,12 @@ Trách nhiệm:
 - EF Core configurations.
 - Migrations.
 - ASP.NET Core Identity persistence.
-- SQLite provider.
+- MySQL provider (Pomelo).
 - Seed từ JSON.
 - Email implementation.
 - Clock implementation.
 - File/image storage local.
-- Keyed booking write lock cho phiên bản SQLite một instance.
+- MySQL advisory lock theo sân/ngày để chống ghi booking đồng thời giữa nhiều instance.
 
 ### 3.4. FootballBooking.Web
 
@@ -360,22 +360,17 @@ Bắt buộc cho:
 - Payment + aggregate status update.
 - Promotion usage + booking creation.
 
-### 7.5. SQLite concurrency
+### 7.5. MySQL concurrency
 
-SQLite chỉ có một writer tại một thời điểm. Phiên bản đầu giả định một web instance.
+Để giảm double booking giữa nhiều web instance:
 
-Để giảm double booking:
+1. Lấy MySQL advisory lock theo `FieldId + BookingDate` trên một connection riêng.
+2. Query lại overlap sau khi giữ lock.
+3. Tạo booking và promotion usage.
+4. Lưu thay đổi.
+5. Nhả advisory lock trên đúng connection đã lấy lock.
 
-1. Keyed lock theo `FieldId + BookingDate` trong process.
-2. Mở transaction.
-3. Query lại overlap.
-4. Tạo booking.
-5. Lưu promotion usage.
-6. Commit.
-
-Không coi UI slot là khóa.
-
-Khi chạy nhiều instance hoặc tải ghi tăng, chuyển database server và thiết kế lại locking.
+Không coi UI slot là khóa. Production cần chạy concurrency test bằng MySQL thật.
 
 ---
 
@@ -491,13 +486,12 @@ Audit nghiệp vụ khác application log kỹ thuật. Audit lưu database và 
 
 ## 11. Deployment model v1
 
-- Một ASP.NET Core process.
-- Một file SQLite đặt ngoài thư mục static.
-- Reverse proxy IIS hoặc Kestrel tùy môi trường.
+- Một hoặc nhiều ASP.NET Core process.
+- Một MySQL server được quản lý độc lập.
+- Reverse proxy IIS, Nginx hoặc Kestrel tùy môi trường.
 - HTTPS.
-- Backup file database khi không có writer hoặc qua cơ chế backup phù hợp.
-
-Không đặt database trong `wwwroot`.
+- Backup MySQL định kỳ và kiểm tra khả năng restore.
+- Secrets kết nối được cung cấp qua Secret Manager hoặc biến môi trường.
 
 ---
 
@@ -511,9 +505,9 @@ Lý do: phù hợp backend-first, Razor + template UI, ít phụ thuộc fronten
 
 Lý do: đủ tách trách nhiệm nhưng không tạo overhead microservices.
 
-### ADR-003: SQLite cho v1
+### ADR-003: MySQL cho persistence
 
-Lý do: đơn giản triển khai, phù hợp đồ án và một cơ sở nhỏ. Chấp nhận giới hạn concurrent writer.
+Lý do: phù hợp triển khai server, hỗ trợ nhiều connection/web instance và cung cấp advisory lock để phối hợp tạo booking.
 
 ### ADR-004: JSON không phải database
 

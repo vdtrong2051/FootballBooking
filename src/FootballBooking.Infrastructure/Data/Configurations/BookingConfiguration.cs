@@ -39,8 +39,8 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_Bookings_Minutes", "\"StartMinute\" >= 0 AND \"StartMinute\" < \"EndMinute\" AND \"EndMinute\" <= 1440");
-            table.HasCheckConstraint("CK_Bookings_Amounts", "\"CourtAmount\" >= 0 AND \"ServiceAmount\" >= 0 AND \"DiscountAmount\" >= 0 AND \"TotalAmount\" >= 0 AND \"PaidAmount\" >= 0 AND \"RefundedAmount\" >= 0");
+            table.HasCheckConstraint("CK_Bookings_Minutes", "StartMinute >= 0 AND StartMinute < EndMinute AND EndMinute <= 1440");
+            table.HasCheckConstraint("CK_Bookings_Amounts", "CourtAmount >= 0 AND ServiceAmount >= 0 AND DiscountAmount >= 0 AND TotalAmount >= 0 AND PaidAmount >= 0 AND RefundedAmount >= 0");
         });
     }
 }

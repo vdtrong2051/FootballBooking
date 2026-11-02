@@ -18,8 +18,8 @@ public sealed class ServiceItemConfiguration : IEntityTypeConfiguration<ServiceI
         builder.HasIndex(service => new { service.IsActive, service.SortOrder });
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_Services_UnitPrice", "\"UnitPrice\" >= 0");
-            table.HasCheckConstraint("CK_Services_AvailableQuantity", "\"AvailableQuantity\" IS NULL OR \"AvailableQuantity\" >= 0");
+            table.HasCheckConstraint("CK_Services_UnitPrice", "UnitPrice >= 0");
+            table.HasCheckConstraint("CK_Services_AvailableQuantity", "AvailableQuantity IS NULL OR AvailableQuantity >= 0");
         });
     }
 }

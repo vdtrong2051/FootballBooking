@@ -23,6 +23,6 @@ public sealed class PaymentRecordConfiguration : IEntityTypeConfiguration<Paymen
         builder.HasIndex(payment => new { payment.BookingId, payment.Status });
         builder.HasIndex(payment => payment.TransactionCode);
         builder.HasIndex(payment => payment.CreatedAtUtc);
-        builder.ToTable(table => table.HasCheckConstraint("CK_Payments_Amount", "\"Amount\" > 0"));
+        builder.ToTable(table => table.HasCheckConstraint("CK_Payments_Amount", "Amount > 0"));
     }
 }

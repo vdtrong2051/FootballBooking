@@ -14,8 +14,8 @@ public sealed class FieldOperatingHourConfiguration : IEntityTypeConfiguration<F
 
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_FieldOperatingHours_DayOfWeek", "\"DayOfWeek\" >= 0 AND \"DayOfWeek\" <= 6");
-            table.HasCheckConstraint("CK_FieldOperatingHours_Minutes", "\"IsClosed\" = 1 OR (\"OpenMinute\" IS NOT NULL AND \"CloseMinute\" IS NOT NULL AND \"OpenMinute\" >= 0 AND \"OpenMinute\" < \"CloseMinute\" AND \"CloseMinute\" <= 1440)");
+            table.HasCheckConstraint("CK_FieldOperatingHours_DayOfWeek", "DayOfWeek >= 0 AND DayOfWeek <= 6");
+            table.HasCheckConstraint("CK_FieldOperatingHours_Minutes", "IsClosed = 1 OR (OpenMinute IS NOT NULL AND CloseMinute IS NOT NULL AND OpenMinute >= 0 AND OpenMinute < CloseMinute AND CloseMinute <= 1440)");
         });
     }
 }

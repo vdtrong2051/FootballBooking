@@ -1,3 +1,5 @@
+using FootballBooking.Application;
+using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Common.Security;
 using FootballBooking.Infrastructure;
 using FootballBooking.Infrastructure.Identity;
@@ -12,7 +14,12 @@ builder.Logging.AddConsole();
 
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
-builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.ContentRootPath);
+var bookingPolicy = builder.Configuration
+    .GetSection("BookingPolicy")
+    .Get<BookingPolicyOptions>() ?? new BookingPolicyOptions();
+
+builder.Services.AddApplication(bookingPolicy);
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthorization(options =>
 {

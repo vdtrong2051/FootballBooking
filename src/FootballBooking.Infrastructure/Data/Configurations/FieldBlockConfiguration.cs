@@ -16,7 +16,7 @@ public sealed class FieldBlockConfiguration : IEntityTypeConfiguration<FieldBloc
 
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_FieldBlocks_Minutes", "\"StartMinute\" >= 0 AND \"StartMinute\" < \"EndMinute\" AND \"EndMinute\" <= 1440");
+            table.HasCheckConstraint("CK_FieldBlocks_Minutes", "StartMinute >= 0 AND StartMinute < EndMinute AND EndMinute <= 1440");
         });
     }
 }

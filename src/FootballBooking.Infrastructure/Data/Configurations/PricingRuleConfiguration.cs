@@ -18,9 +18,9 @@ public sealed class PricingRuleConfiguration : IEntityTypeConfiguration<PricingR
 
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_PricingRules_Minutes", "\"StartMinute\" >= 0 AND \"StartMinute\" < \"EndMinute\" AND \"EndMinute\" <= 1440");
-            table.HasCheckConstraint("CK_PricingRules_Price", "\"PricePerHour\" >= 0");
-            table.HasCheckConstraint("CK_PricingRules_EffectiveTo", "\"EffectiveTo\" IS NULL OR \"EffectiveTo\" >= \"EffectiveFrom\"");
+            table.HasCheckConstraint("CK_PricingRules_Minutes", "StartMinute >= 0 AND StartMinute < EndMinute AND EndMinute <= 1440");
+            table.HasCheckConstraint("CK_PricingRules_Price", "PricePerHour >= 0");
+            table.HasCheckConstraint("CK_PricingRules_EffectiveTo", "EffectiveTo IS NULL OR EffectiveTo >= EffectiveFrom");
         });
     }
 }
