@@ -23,6 +23,65 @@ public sealed class ReportServiceTests
     }
 
     [Fact]
+    public async Task GetRevenueChartAsync_ReturnsWaterfallStepsWithRunningTotalsAndFinalSummary()
+    {
+        var store = new InMemoryReportStore();
+        store.Bookings.Add(CreateBooking("FB-1", BookingStatus.Completed, 500000, 400000, 0));
+        var service = new ReportService(store, new FixedClock());
+
+        var chart = await service.GetRevenueChartAsync(new DateOnly(2026, 7, 25), new DateOnly(2026, 7, 26), CancellationToken.None);
+
+        var dataset = Assert.Single(chart.Datasets);
+        Assert.Equal("waterfall", dataset.Type);
+        Assert.NotNull(dataset.WaterfallSteps);
+        var finalStep = dataset.WaterfallSteps!.Last();
+        Assert.True(finalStep.IsTotal);
+        Assert.Equal("Tổng thực thu", finalStep.Label);
+        Assert.Equal(400000, finalStep.End);
+    }
+
+    [Fact]
+    public async Task GetRevenueWaterfallChartAsync_ReturnsFinancialBridgeSteps()
+    {
+        var store = new InMemoryReportStore();
+        store.Bookings.Add(new ReportBookingRecordDto(
+            Guid.NewGuid(),
+            "FB-1",
+            "Sân 5A",
+            new DateOnly(2026, 7, 26),
+            1080,
+            1140,
+            "Nguyễn Minh Tuấn",
+            BookingStatus.Completed,
+            PaymentStatus.PartiallyPaid,
+            CourtAmount: 300000,
+            ServiceAmount: 100000,
+            DiscountAmount: 50000,
+            CancellationFeeAmount: 0,
+            TotalAmount: 350000,
+            PaidAmount: 300000,
+            RefundedAmount: 20000,
+            ServiceLines: []));
+        var service = new ReportService(store, new FixedClock());
+
+        var chart = await service.GetRevenueWaterfallChartAsync(new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31), CancellationToken.None);
+
+        var dataset = Assert.Single(chart.Datasets);
+        Assert.Equal("waterfall", dataset.Type);
+        Assert.NotNull(dataset.WaterfallSteps);
+        Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Tiền sân" && step.Delta == 300000);
+        Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Dịch vụ" && step.Delta == 100000);
+        Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Khuyến mãi" && step.Delta == -50000);
+        Assert.Contains(dataset.WaterfallSteps!, step => step.Label == "Hoàn trả" && step.Delta == -20000);
+        var penultimateStep = dataset.WaterfallSteps![^2];
+        var finalStep = dataset.WaterfallSteps!.Last();
+        Assert.True(finalStep.IsTotal);
+        Assert.Equal("Thực thu ròng", finalStep.Label);
+        Assert.Equal(280000, penultimateStep.End);
+        Assert.Equal(280000, finalStep.End);
+    }
+
+    [Fact]
     public async Task GetStaffDashboardAsync_WhenTodayHasServiceLines_ReturnsPreparationSummary()
     {
         var store = new InMemoryReportStore();

@@ -36,6 +36,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.Property(user => user.AccountStatus)
                 .HasConversion<int>()
                 .IsRequired();
+
+            entity.Property(user => user.CommissionPercent)
+                .HasPrecision(5, 2);
         });
     }
 }

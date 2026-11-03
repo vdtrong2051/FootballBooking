@@ -283,9 +283,13 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(promotionResult.Errors);
         }
 
-        var status = command.Source == BookingSource.GuestWeb ? BookingStatus.PendingPayment : BookingStatus.Confirmed;
+        var status = command.Source is BookingSource.GuestWeb or BookingSource.CustomerAccount
+            ? BookingStatus.PendingPayment
+            : BookingStatus.Confirmed;
         DateTimeOffset? expiresAtUtc = status == BookingStatus.PendingPayment ? now.AddMinutes(HoldMinutes) : null;
         var bookingCode = await GenerateBookingCodeAsync(command.BookingDate, cancellationToken);
+        var effectiveNote = BuildBookingNote(command.Note, command.PreferredPaymentMethod);
+
         var booking = new Booking(
             bookingId,
             bookingCode,
@@ -297,7 +301,7 @@ public sealed class BookingService(
             command.CustomerPhone,
             NormalizePhone(command.CustomerPhone),
             command.CustomerEmail,
-            null,
+            command.CustomerUserId,
             command.CreatedByUserId,
             command.Source,
             status,
@@ -310,7 +314,7 @@ public sealed class BookingService(
             promotionResult.Promotion?.Code,
             expiresAtUtc,
             now,
-            command.Note);
+            effectiveNote);
         booking.ApplyCommercialSnapshot(serviceResult.Lines, promotionResult.Promotion?.Id, promotionResult.Promotion?.Code, serviceResult.ServiceAmount, promotionResult.DiscountAmount, now);
 
         await store.AddBookingAsync(booking, cancellationToken);
@@ -338,10 +342,25 @@ public sealed class BookingService(
     public Task<BookingDetailDto?> GetBookingByCodeAsync(string bookingCode, CancellationToken cancellationToken = default)
         => store.GetBookingDetailByCodeAsync(bookingCode.Trim(), cancellationToken);
 
+    public Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhone, CancellationToken cancellationToken = default)
+        => store.ListCustomerBookingsAsync(customerUserId, string.IsNullOrWhiteSpace(customerPhone) ? null : NormalizePhone(customerPhone), cancellationToken);
+
     public Task<IReadOnlyList<BookingSummaryDto>> ListAdminBookingsAsync(DateOnly? bookingDate, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken = default)
         => store.ListBookingsAsync(bookingDate, fieldId, status, cancellationToken);
 
-    public async Task<IReadOnlyList<ScheduleEventDto>> ListScheduleEventsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<ScheduleEventDto>> ListScheduleEventsAsync(
+        DateOnly startDate,
+        DateOnly endDateExclusive,
+        Guid? fieldId,
+        CancellationToken cancellationToken = default)
+        => ListScheduleEventsAsync(startDate, endDateExclusive, fieldId, null, cancellationToken);
+
+    public async Task<IReadOnlyList<ScheduleEventDto>> ListScheduleEventsAsync(
+        DateOnly startDate,
+        DateOnly endDateExclusive,
+        Guid? fieldId,
+        BookingStatus? status,
+        CancellationToken cancellationToken = default)
     {
         if (endDateExclusive <= startDate)
         {
@@ -349,6 +368,10 @@ public sealed class BookingService(
         }
 
         var bookings = await store.ListScheduleBookingsAsync(startDate, endDateExclusive, fieldId, cancellationToken);
+        bookings = status is null
+            ? bookings.Where(booking => booking.Status != BookingStatus.Cancelled && booking.Status != BookingStatus.Expired).ToArray()
+            : bookings.Where(booking => booking.Status == status.Value).ToArray();
+
         var blocks = await store.ListScheduleBlocksAsync(startDate, endDateExclusive, fieldId, cancellationToken);
         var events = new List<ScheduleEventDto>();
 
@@ -364,21 +387,28 @@ public sealed class BookingService(
             BookingLabels.ScheduleTone(booking.Status),
             $"/admin/bookings/{booking.Id}",
             false,
-            $"{BookingLabels.Status(booking.Status)} · {BookingLabels.PaymentStatus(booking.PaymentStatus)}")));
+            $"{BookingLabels.Status(booking.Status)} · {BookingLabels.PaymentStatus(booking.PaymentStatus)}",
+            booking.FieldId,
+            booking.CustomerPhone,
+            BookingLabels.PaymentStatus(booking.PaymentStatus))));
 
-        events.AddRange(blocks.Select(block => new ScheduleEventDto(
-            $"block-{block.Id}",
-            $"{block.FieldName} · Khóa sân",
-            block.BlockDate,
-            block.StartMinute,
-            block.EndMinute,
-            block.FieldName,
-            null,
-            null,
-            "neutral",
-            string.Empty,
-            true,
-            block.Reason)));
+        if (status is null)
+        {
+            events.AddRange(blocks.Select(block => new ScheduleEventDto(
+                $"block-{block.Id}",
+                $"{block.FieldName} · Khóa sân",
+                block.BlockDate,
+                block.StartMinute,
+                block.EndMinute,
+                block.FieldName,
+                null,
+                null,
+                "neutral",
+                string.Empty,
+                true,
+                block.Reason,
+                block.FieldId)));
+        }
 
         return events
             .OrderBy(scheduleEvent => scheduleEvent.EventDate)
@@ -520,6 +550,24 @@ public sealed class BookingService(
         booking.Cancel(now, string.IsNullOrWhiteSpace(command.Reason) ? "Khách tự hủy qua tra cứu booking" : command.Reason, CalculateCancellationFee(booking));
         await store.SaveChangesAsync(cancellationToken);
         return BookingCommandResult.Success(booking.BookingCode, booking.Id);
+    }
+
+    private static string? BuildBookingNote(string? note, PaymentMethod? preferredPaymentMethod)
+    {
+        if (preferredPaymentMethod is null)
+        {
+            return note;
+        }
+
+        var methodLabel = $"Hình thức TT: {BookingLabels.PaymentMethod(preferredPaymentMethod.Value)}";
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            return methodLabel;
+        }
+
+        return note.Contains(methodLabel, StringComparison.OrdinalIgnoreCase)
+            ? note
+            : $"{note.Trim()} | {methodLabel}";
     }
 
     private List<string> ValidateCreateCommand(BookingCreateCommand command, Field field, IReadOnlyList<Booking> bookings)

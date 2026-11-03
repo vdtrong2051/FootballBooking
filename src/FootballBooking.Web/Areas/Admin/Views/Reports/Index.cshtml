@@ -13,18 +13,16 @@
     var previousToIso = Model.ToDate.AddDays(-7).ToString("yyyy-MM-dd");
     var nextFromIso = Model.FromDate.AddDays(7).ToString("yyyy-MM-dd");
     var nextToIso = Model.ToDate.AddDays(7).ToString("yyyy-MM-dd");
-    var monthFromIso = new DateOnly(2026, 7, 1).ToString("yyyy-MM-dd");
-    var monthToIso = new DateOnly(2026, 7, 31).ToString("yyyy-MM-dd");
-    var quarterFromIso = new DateOnly(2026, 7, 1).ToString("yyyy-MM-dd");
-    var quarterToIso = new DateOnly(2026, 9, 30).ToString("yyyy-MM-dd");
+    var monthFromIso = new DateOnly(Model.ToDate.Year, Model.ToDate.Month, 1).ToString("yyyy-MM-dd");
+    var monthToIso = new DateOnly(Model.ToDate.Year, Model.ToDate.Month, DateTime.DaysInMonth(Model.ToDate.Year, Model.ToDate.Month)).ToString("yyyy-MM-dd");
 }
 
 <div class="space-y-5">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Dành cho Chủ sân</p>
-            <h1 class="mt-1 text-2xl font-semibold text-ink">Báo cáo</h1>
-            <p class="mt-1 text-sm text-muted">Theo dõi doanh thu, lượt đặt sân, tỷ lệ lấp đầy và công nợ trong khoảng ngày đã chọn.</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-muted">Phân tích tài chính &amp; vận hành</p>
+            <h1 class="mt-1 text-2xl font-semibold text-ink">Báo cáo thác nước doanh thu</h1>
+            <p class="mt-1 text-sm text-muted">Theo dõi biến động thác nước doanh thu, cầu nối tài chính, tỷ lệ lấp đầy và công nợ trong kỳ.</p>
         </div>
         <a class="fb-button fb-button-primary" href="/admin/reports/revenue.csv?from=@fromIso&to=@toIso">Xuất CSV</a>
     </div>
@@ -44,7 +42,12 @@
     </form>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p class="text-sm font-medium text-ink">Tuần đang xem: @Model.FromDate.ToString("dd/MM/yyyy") - @Model.ToDate.ToString("dd/MM/yyyy")</p>
+        <div class="flex flex-wrap items-center gap-3">
+            <p class="text-sm font-medium text-ink">Kỳ đang xem: @Model.FromDate.ToString("dd/MM/yyyy") - @Model.ToDate.ToString("dd/MM/yyyy")</p>
+            <span class="rounded-ui border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800">Tăng (+)</span>
+            <span class="rounded-ui border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">Giảm / Khuyến mãi / Hoàn (-)</span>
+            <span class="rounded-ui border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">Cột Tổng kết (=)</span>
+        </div>
         <div class="flex flex-wrap gap-2">
             <a class="fb-button fb-button-secondary" href="/admin/reports?from=@previousFromIso&to=@previousToIso">Tuần trước</a>
             <a class="fb-button fb-button-secondary" href="/admin/reports?from=@nextFromIso&to=@nextToIso">Tuần sau</a>
@@ -61,13 +64,37 @@
     <div class="grid gap-5 xl:grid-cols-2">
         <section class="fb-card min-w-0 p-4">
             <div>
-                <h2 class="font-semibold text-ink">Doanh thu theo ngày</h2>
-                <p class="text-sm text-muted">Số tiền đã ghi nhận sau hoàn trả.</p>
+                <h2 class="font-semibold text-ink">Biểu đồ thác nước cơ cấu doanh thu</h2>
+                <p class="text-sm text-muted">Cầu nối tài chính: Tiền sân + Dịch vụ - Khuyến mãi + Phí hủy - Hoàn trả - Công nợ = Thực thu ròng.</p>
             </div>
             <div class="mt-4 h-72 min-w-0">
-                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@fromIso&to=@toIso" aria-label="Biểu đồ doanh thu theo ngày"></canvas>
+                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue-waterfall?from=@fromIso&to=@toIso" aria-label="Biểu đồ thác nước cơ cấu doanh thu"></canvas>
+            </div>
+            <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ thác nước cơ cấu doanh thu.</p>
+        </section>
+
+        <section class="fb-card min-w-0 p-4">
+            <div>
+                <h2 class="font-semibold text-ink">Biểu đồ thác nước lũy kế doanh thu theo ngày</h2>
+                <p class="text-sm text-muted">Biến động cộng dồn từng ngày trong kỳ đến tổng thực thu cuối kỳ.</p>
+            </div>
+            <div class="mt-4 h-72 min-w-0">
+                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@fromIso&to=@toIso" aria-label="Biểu đồ thác nước doanh thu theo ngày"></canvas>
             </div>
             <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ doanh thu.</p>
+        </section>
+    </div>
+
+    <div class="grid gap-5 md:grid-cols-2">
+        <section class="fb-card min-w-0 p-4">
+            <div>
+                <h2 class="font-semibold text-ink">Thác nước doanh thu trong tháng (@Model.ToDate.ToString("MM/yyyy"))</h2>
+                <p class="text-sm text-muted">Cộng dồn các ngày phát sinh doanh thu trong tháng đang chọn.</p>
+            </div>
+            <div class="mt-4 h-60 min-w-0">
+                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@monthFromIso&to=@monthToIso" aria-label="Biểu đồ thác nước doanh thu tháng"></canvas>
+            </div>
+            <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ doanh thu tháng.</p>
         </section>
 
         <section class="fb-card min-w-0 p-4">
@@ -75,34 +102,10 @@
                 <h2 class="font-semibold text-ink">Lượt đặt sân theo ngày</h2>
                 <p class="text-sm text-muted">Không tính lượt đã hủy, hết hạn hoặc khách không đến.</p>
             </div>
-            <div class="mt-4 h-72 min-w-0">
+            <div class="mt-4 h-60 min-w-0">
                 <canvas data-report-chart data-chart-url="/admin/api/dashboard/bookings?from=@fromIso&to=@toIso" aria-label="Biểu đồ lượt đặt sân theo ngày"></canvas>
             </div>
             <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ lượt đặt sân.</p>
-        </section>
-    </div>
-
-    <div class="grid gap-5 md:grid-cols-2">
-        <section class="fb-card min-w-0 p-4">
-            <div>
-                <h2 class="font-semibold text-ink">Doanh thu tháng 7/2026</h2>
-                <p class="text-sm text-muted">Chỉ hiển thị dữ liệu đã phát sinh trong tháng.</p>
-            </div>
-            <div class="mt-4 h-52 min-w-0">
-                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@monthFromIso&to=@monthToIso" aria-label="Biểu đồ doanh thu tháng 7/2026"></canvas>
-            </div>
-            <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ doanh thu tháng.</p>
-        </section>
-
-        <section class="fb-card min-w-0 p-4">
-            <div>
-                <h2 class="font-semibold text-ink">Doanh thu quý 3/2026</h2>
-                <p class="text-sm text-muted">Dữ liệu hiện có sẽ được thể hiện, ngày chưa phát sinh giữ bằng 0.</p>
-            </div>
-            <div class="mt-4 h-52 min-w-0">
-                <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@quarterFromIso&to=@quarterToIso" aria-label="Biểu đồ doanh thu quý 3/2026"></canvas>
-            </div>
-            <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ doanh thu quý.</p>
         </section>
     </div>
 

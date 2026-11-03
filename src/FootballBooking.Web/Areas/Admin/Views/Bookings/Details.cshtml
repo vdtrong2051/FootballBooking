@@ -1,4 +1,4 @@
-﻿@model AdminBookingDetailViewModel
+@model AdminBookingDetailViewModel
 @using FootballBooking.Domain.Bookings
 @{
     ViewData["Title"] = Model.Booking.BookingCode;
@@ -177,7 +177,7 @@
                                     <div><label class="fb-label" asp-for="PaymentForm.Amount"></label><input class="fb-input" asp-for="PaymentForm.Amount" type="number" min="1" name="Amount" value="@suggestedPayment" /></div>
                                     <div>
                                         <label class="fb-label" asp-for="PaymentForm.Method"></label>
-                                        <select class="fb-input" asp-for="PaymentForm.Method" name="Method"><option value="@PaymentMethod.Cash">Tiền mặt</option><option value="@PaymentMethod.BankTransfer">Chuyển khoản</option><option value="@PaymentMethod.Other">Khác</option></select>
+                                        <select class="fb-input" asp-for="PaymentForm.Method" name="Method"><option value="@PaymentMethod.Cash">Tiền mặt</option><option value="@PaymentMethod.VietQr">VietQR</option><option value="@PaymentMethod.MoMo">Ví MoMo</option><option value="@PaymentMethod.ZaloPay">Ví ZaloPay</option><option value="@PaymentMethod.BankTransfer">Chuyển khoản</option><option value="@PaymentMethod.Card">Thẻ ngân hàng</option><option value="@PaymentMethod.Other">Khác</option></select>
                                     </div>
                                     <div><label class="fb-label" asp-for="PaymentForm.TransactionCode"></label><input class="fb-input" asp-for="PaymentForm.TransactionCode" name="TransactionCode" placeholder="Mã giao dịch nếu có" /></div>
                                     <div><label class="fb-label" asp-for="PaymentForm.Note"></label><textarea class="fb-input" asp-for="PaymentForm.Note" name="Note" rows="2" placeholder="Ví dụ: Khách đặt cọc qua chuyển khoản"></textarea></div>
@@ -199,7 +199,7 @@
                                     <div><label class="fb-label" asp-for="PaymentForm.Amount"></label><input class="fb-input" asp-for="PaymentForm.Amount" type="number" min="1" name="Amount" value="@suggestedPayment" /></div>
                                     <div>
                                         <label class="fb-label" asp-for="PaymentForm.Method"></label>
-                                        <select class="fb-input" asp-for="PaymentForm.Method" name="Method"><option value="@PaymentMethod.Cash">Tiền mặt</option><option value="@PaymentMethod.BankTransfer">Chuyển khoản</option><option value="@PaymentMethod.Other">Khác</option></select>
+                                        <select class="fb-input" asp-for="PaymentForm.Method" name="Method"><option value="@PaymentMethod.Cash">Tiền mặt</option><option value="@PaymentMethod.VietQr">VietQR</option><option value="@PaymentMethod.MoMo">Ví MoMo</option><option value="@PaymentMethod.ZaloPay">Ví ZaloPay</option><option value="@PaymentMethod.BankTransfer">Chuyển khoản</option><option value="@PaymentMethod.Card">Thẻ ngân hàng</option><option value="@PaymentMethod.Other">Khác</option></select>
                                     </div>
                                     <div><label class="fb-label" asp-for="PaymentForm.TransactionCode"></label><input class="fb-input" asp-for="PaymentForm.TransactionCode" name="TransactionCode" placeholder="Mã giao dịch nếu có" /></div>
                                     <div><label class="fb-label" asp-for="PaymentForm.Note"></label><textarea class="fb-input" asp-for="PaymentForm.Note" name="Note" rows="2" placeholder="Ví dụ: Khách thanh toán tại quầy"></textarea></div>

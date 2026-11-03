@@ -9,6 +9,14 @@ public sealed class ApplicationUser : IdentityUser<Guid>
 
     public AccountStatus AccountStatus { get; set; } = AccountStatus.Active;
 
+    public long BaseSalary { get; set; }
+
+    public long HourlyRate { get; set; }
+
+    public int StandardHoursPerMonth { get; set; } = 160;
+
+    public decimal CommissionPercent { get; set; }
+
     public DateTimeOffset? LastLoginAtUtc { get; set; }
 
     public DateTimeOffset CreatedAtUtc { get; set; }

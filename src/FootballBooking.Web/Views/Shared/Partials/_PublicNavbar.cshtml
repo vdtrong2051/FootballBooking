@@ -1,4 +1,5 @@
-﻿<header class="border-b border-line bg-white">
+@using FootballBooking.Application.Common.Security
+<header class="border-b border-line bg-white">
     <nav class="fb-container flex min-h-16 items-center justify-between gap-4" aria-label="Điều hướng công khai">
         <partial name="Partials/_BrandLogo" />
 
@@ -16,6 +17,24 @@
         </div>
 
         <div class="hidden items-center gap-2 lg:flex">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span class="text-xs font-medium text-muted">@User.Identity.Name</span>
+                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
+                {
+                    <a class="fb-button fb-button-secondary" href="/admin/dashboard">Vào trang Quản trị</a>
+                }
+                <a class="fb-button fb-button-secondary" href="/account/bookings">Lịch đặt của tôi</a>
+                <form method="post" action="/account/logout" class="inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="fb-button fb-button-secondary">Đăng xuất</button>
+                </form>
+            }
+            else
+            {
+                <a class="fb-button fb-button-secondary" href="/account/login">Đăng nhập</a>
+                <a class="text-sm font-medium text-brand-800 hover:underline px-2" href="/account/register">Đăng ký</a>
+            }
             <a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a>
         </div>
     </nav>
@@ -36,6 +55,19 @@
             <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/promotions">Khuyến mãi</a>
             <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/booking/lookup">Tra cứu đặt sân</a>
             <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/contact">Liên hệ</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
+                {
+                    <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/admin/dashboard">Vào trang Quản trị</a>
+                }
+                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/bookings">Lịch đặt của tôi</a>
+            }
+            else
+            {
+                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/login">Đăng nhập</a>
+                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/register">Đăng ký</a>
+            }
             <div class="mt-3 grid gap-2">
                 <a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a>
             </div>

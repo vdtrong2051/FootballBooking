@@ -59,7 +59,10 @@ public sealed record ScheduleEventDto(
     string Tone,
     string Url,
     bool IsBackground,
-    string? Description);
+    string? Description,
+    Guid? FieldId = null,
+    string? CustomerPhone = null,
+    string? PaymentStatusLabel = null);
 
 public sealed record ScheduleBlockDto(
     Guid Id,
@@ -82,7 +85,8 @@ public sealed record BookingSummaryDto(
     BookingStatus Status,
     PaymentStatus PaymentStatus,
     long TotalAmount,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    Guid? FieldId = null);
 
 public sealed record BookingDetailDto(
     Guid Id,
@@ -116,6 +120,31 @@ public sealed record BookingDetailDto(
     IReadOnlyList<PaymentRecordDto> Payments)
 {
     public long RemainingAmount => Math.Max(0, TotalAmount - PaidAmount + RefundedAmount);
+
+    public PaymentMethod PreferredPaymentMethod
+    {
+        get
+        {
+            var latestPayment = Payments.OrderByDescending(payment => payment.CreatedAtUtc).FirstOrDefault();
+            if (latestPayment is not null)
+            {
+                return latestPayment.Method;
+            }
+
+            if (!string.IsNullOrWhiteSpace(Note))
+            {
+                foreach (var method in Enum.GetValues<PaymentMethod>())
+                {
+                    if (Note.Contains(BookingLabels.PaymentMethod(method), StringComparison.OrdinalIgnoreCase))
+                    {
+                        return method;
+                    }
+                }
+            }
+
+            return PaymentMethod.VietQr;
+        }
+    }
 }
 
 public sealed record BookingCommandResult(bool Succeeded, string? BookingCode, Guid? BookingId, IReadOnlyList<string> Errors)

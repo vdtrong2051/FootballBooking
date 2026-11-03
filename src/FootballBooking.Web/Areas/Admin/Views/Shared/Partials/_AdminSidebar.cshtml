@@ -1,18 +1,18 @@
-﻿@using FootballBooking.Application.Common.Security
+@using FootballBooking.Application.Common.Security
 
 @{
     var isOwner = User.IsInRole(ApplicationRoles.Owner);
     var items = new[]
     {
-        new { Label = "Tổng quan", Url = "/admin/dashboard", Icon = "home", OwnerOnly = false },
-        new { Label = "Lịch sân", Url = "/admin/schedule", Icon = "calendar", OwnerOnly = false },
-        new { Label = "Lịch đặt sân", Url = "/admin/bookings", Icon = "clipboard-document-list", OwnerOnly = false },
-        new { Label = "Thanh toán", Url = "/admin/payments", Icon = "credit-card", OwnerOnly = false },
-        new { Label = "Quản lý sân", Url = "/admin/fields", Icon = "building-office", OwnerOnly = true },
-        new { Label = "Dịch vụ", Url = "/admin/services", Icon = "clipboard-document-list", OwnerOnly = true },
-        new { Label = "Khuyến mãi", Url = "/admin/promotions", Icon = "tag", OwnerOnly = true },
-        new { Label = "Báo cáo", Url = "/admin/reports", Icon = "chart-bar", OwnerOnly = true },
-        new { Label = "Nhân viên", Url = "/admin/staff", Icon = "users", OwnerOnly = true }
+        new { Label = "Tổng quan", Url = "/admin/dashboard", Icon = "home", Visible = true },
+        new { Label = "Lịch sân", Url = "/admin/schedule", Icon = "calendar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
+        new { Label = "Lịch đặt sân", Url = "/admin/bookings", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
+        new { Label = "Thanh toán", Url = "/admin/payments", Icon = "credit-card", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManagePayments) },
+        new { Label = "Quản lý sân", Url = "/admin/fields", Icon = "building-office", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Label = "Dịch vụ", Url = "/admin/services", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Label = "Khuyến mãi", Url = "/admin/promotions", Icon = "tag", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Label = "Báo cáo", Url = "/admin/reports", Icon = "chart-bar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ViewReports) },
+        new { Label = "Nhân viên & Lương", Url = "/admin/staff", Icon = "users", Visible = isOwner }
     };
 }
 
@@ -23,7 +23,7 @@
     <nav class="grid gap-1 p-3 text-sm" aria-label="Điều hướng quản trị">
         @foreach (var item in items)
         {
-            if (item.OwnerOnly && !isOwner)
+            if (!item.Visible)
             {
                 continue;
             }
@@ -48,7 +48,7 @@
         <nav class="grid gap-1 p-3 text-sm" aria-label="Điều hướng quản trị trên di động">
             @foreach (var item in items)
             {
-                if (item.OwnerOnly && !isOwner)
+                if (!item.Visible)
                 {
                     continue;
                 }

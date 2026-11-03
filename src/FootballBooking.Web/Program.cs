@@ -2,6 +2,7 @@ using FootballBooking.Application;
 using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Common.Security;
 using FootballBooking.Infrastructure;
+using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Identity;
 using FootballBooking.Infrastructure.SeedData;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
@@ -25,11 +26,26 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("InternalUser", policy => policy.RequireRole(ApplicationRoles.Internal));
     options.AddPolicy("OwnerOnly", policy => policy.RequireRole(ApplicationRoles.Owner));
+    options.AddPolicy("CanManageSchedule", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManageSchedule)));
+    options.AddPolicy("CanManagePayments", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManagePayments)));
+    options.AddPolicy("CanAccessBookings", policy => policy.RequireAssertion(ctx =>
+        StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManageSchedule)
+        || StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManagePayments)));
+    options.AddPolicy("CanManageCatalog", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ManageCatalog)));
+    options.AddPolicy("CanViewReports", policy => policy.RequireAssertion(ctx => StaffPermissions.HasPermission(ctx.User, StaffPermissions.ViewReports)));
 });
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/admin/login";
     options.AccessDeniedPath = "/admin/login";
+    options.Events.OnRedirectToLogin = context =>
+    {
+        var redirectUri = context.Request.Path.StartsWithSegments("/account", StringComparison.OrdinalIgnoreCase)
+            ? context.RedirectUri.Replace("/admin/login", "/account/login", StringComparison.OrdinalIgnoreCase)
+            : context.RedirectUri;
+        context.Response.Redirect(redirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 var app = builder.Build();
@@ -42,6 +58,8 @@ if (shouldSeedDevelopmentData)
     }
 
     using var seedScope = app.Services.CreateScope();
+    var dbContext = seedScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
     var identitySeeder = seedScope.ServiceProvider.GetRequiredService<IdentitySeeder>();
     await identitySeeder.SeedDevelopmentOwnerAsync();
     await seedScope.ServiceProvider.GetRequiredService<DevelopmentFieldSeeder>().SeedAsync();

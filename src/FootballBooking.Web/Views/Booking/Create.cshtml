@@ -1,6 +1,15 @@
 @model BookingCreateViewModel
 @{
     ViewData["Title"] = "Đặt sân";
+    var paymentOptions = new (PaymentMethod Method, string Title, string Subtitle, string Badge)[]
+    {
+        (PaymentMethod.VietQr, "VietQR", "Quét mã QR ngân hàng tự động điền nội dung", "Phổ biến"),
+        (PaymentMethod.MoMo, "MoMo", "Thanh toán nhanh qua ví điện tử MoMo", "Ví điện tử"),
+        (PaymentMethod.ZaloPay, "ZaloPay", "Quét QR hoặc mở ứng dụng ZaloPay", "Ví điện tử"),
+        (PaymentMethod.BankTransfer, "Chuyển khoản", "Chuyển khoản thủ công qua số tài khoản", "Ngân hàng"),
+        (PaymentMethod.Card, "Thẻ ngân hàng", "Thanh toán thẻ ATM / Visa / Mastercard tại quầy", "Thẻ POS"),
+        (PaymentMethod.Cash, "Tiền mặt", "Thanh toán trực tiếp tại sân khi check-in", "Tại sân")
+    };
 }
 @functions {
     private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
@@ -9,18 +18,43 @@
 
 <section class="border-b border-line bg-white">
     <div class="fb-container py-8">
-        <p class="text-sm font-semibold uppercase text-brand-800">Đặt sân</p>
-        <h1 class="mt-2 text-3xl font-semibold text-ink">Chọn sân và khung giờ phù hợp</h1>
-        <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">Khách có thể đặt sân mà không cần tạo tài khoản. Hệ thống sẽ kiểm tra lại lịch trống và tính giá trên máy chủ trước khi giữ chỗ.</p>
+        <p class="text-sm font-semibold uppercase text-brand-800">Đặt sân trực tuyến</p>
+        <h1 class="mt-2 text-3xl font-semibold text-ink">Chọn sân, khung giờ và phương thức thanh toán</h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span>Bạn đang đặt sân bằng tài khoản cá nhân. Thông tin liên hệ đã được điền sẵn và lịch đặt sẽ lưu trong mục <a class="font-semibold text-brand-800 underline" href="/account/bookings">Lịch đặt của tôi</a>.</span>
+            }
+            else
+            {
+                <span>Khách có thể đặt sân nhanh không cần tài khoản, hoặc <a class="font-semibold text-brand-800 underline" href="/account/login?returnUrl=/booking">đăng nhập</a> để lưu lịch sử đặt sân.</span>
+            }
+        </p>
+
+        <div class="mt-6 grid gap-3 sm:grid-cols-3">
+            <div class="rounded-ui border border-brand-700 bg-brand-50 p-3">
+                <p class="text-xs font-semibold uppercase text-brand-800">Bước 1</p>
+                <p class="mt-1 text-sm font-semibold text-ink">Chọn sân &amp; khung giờ</p>
+            </div>
+            <div class="rounded-ui border border-brand-700 bg-brand-50 p-3">
+                <p class="text-xs font-semibold uppercase text-brand-800">Bước 2</p>
+                <p class="mt-1 text-sm font-semibold text-ink">Dịch vụ đi kèm &amp; thông tin khách</p>
+            </div>
+            <div class="rounded-ui border border-brand-700 bg-brand-50 p-3">
+                <p class="text-xs font-semibold uppercase text-brand-800">Bước 3</p>
+                <p class="mt-1 text-sm font-semibold text-ink">Chọn phương thức thanh toán</p>
+            </div>
+        </div>
     </div>
 </section>
 
 <section class="fb-container grid gap-5 py-8 lg:grid-cols-[1.2fr_0.8fr]">
-    <form class="fb-card p-4" method="post" asp-action="Create">
+    <form class="fb-card p-5" method="post" asp-action="Create">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="mb-4 rounded-ui border border-red-200 bg-red-50 p-3 text-sm text-red-800"></div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+        <h2 class="text-base font-semibold text-ink">1. Sân bóng và khung giờ</h2>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
                 <label class="fb-label" asp-for="FieldId">Sân bóng</label>
                 <select class="fb-input" asp-for="FieldId">
@@ -58,7 +92,7 @@
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <h2 class="text-base font-semibold text-ink">Dịch vụ đi kèm</h2>
+                <h2 class="text-base font-semibold text-ink">2. Dịch vụ đi kèm &amp; thông tin liên hệ</h2>
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                     @for (var i = 0; i < Model.Services.Count; i++)
                     {
@@ -104,8 +138,28 @@
             </div>
         </div>
 
+        <div class="mt-6">
+            <h2 class="text-base font-semibold text-ink">3. Phương thức thanh toán</h2>
+            <p class="mt-1 text-xs text-muted">Chọn phương thức bạn muốn sử dụng để nhận hướng dẫn thanh toán / mã QR ngay sau khi đặt sân.</p>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                @foreach (var option in paymentOptions)
+                {
+                    <label class="flex cursor-pointer items-start gap-3 rounded-ui border border-line bg-white p-3 hover:border-brand-700">
+                        <input type="radio" asp-for="PreferredPaymentMethod" value="@option.Method" class="mt-1 text-brand-700 focus:ring-brand-700" />
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-ink">@option.Title</span>
+                                <span class="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">@option.Badge</span>
+                            </div>
+                            <p class="mt-1 text-xs text-muted">@option.Subtitle</p>
+                        </div>
+                    </label>
+                }
+            </div>
+        </div>
+
         <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-sm text-muted">Sau khi gửi, hệ thống giữ chỗ trong 10 phút để nhân viên xác nhận.</p>
+            <p class="text-sm text-muted">Sau khi gửi, hệ thống giữ chỗ trong 10 phút để hoàn tất thanh toán hoặc xác nhận.</p>
             <button class="fb-button fb-button-primary" type="submit">
                 <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("check-circle")' />
                 <span>Xác nhận đặt sân</span>

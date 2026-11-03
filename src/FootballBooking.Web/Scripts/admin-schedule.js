@@ -1,4 +1,4 @@
-﻿import { Calendar } from "@fullcalendar/core";
+import { Calendar } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -16,7 +16,9 @@ const vietnameseButtons = {
 
 if (calendarElement) {
   const eventsUrl = calendarElement.dataset.eventsUrl;
+  const createUrl = calendarElement.dataset.createUrl || "/admin/bookings/create";
   const fieldId = calendarElement.dataset.fieldId;
+  const status = calendarElement.dataset.status;
   const initialDate = calendarElement.dataset.initialDate;
 
   const calendar = new Calendar(calendarElement, {
@@ -26,6 +28,7 @@ if (calendarElement) {
     locale: viLocale,
     firstDay: 1,
     nowIndicator: true,
+    selectable: true,
     allDaySlot: false,
     slotMinTime: "06:00:00",
     slotMaxTime: "23:30:00",
@@ -45,6 +48,9 @@ if (calendarElement) {
       if (fieldId) {
         url.searchParams.set("fieldId", fieldId);
       }
+      if (status) {
+        url.searchParams.set("status", status);
+      }
 
       fetch(url, { headers: { Accept: "application/json" } })
         .then((response) => {
@@ -60,6 +66,20 @@ if (calendarElement) {
           failureCallback(error);
         });
     },
+    dateClick: (info) => {
+      const clickedDate = info.date;
+      const yyyyMmDd = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, "0")}-${String(clickedDate.getDate()).padStart(2, "0")}`;
+      const startMinute = clickedDate.getHours() * 60 + clickedDate.getMinutes();
+      const targetUrl = new URL(createUrl, window.location.origin);
+      if (fieldId) {
+        targetUrl.searchParams.set("fieldId", fieldId);
+      }
+      targetUrl.searchParams.set("date", yyyyMmDd);
+      if (startMinute >= 360 && startMinute <= 1350) {
+        targetUrl.searchParams.set("startMinute", String(startMinute));
+      }
+      window.location.assign(targetUrl.toString());
+    },
     eventClick: (info) => {
       if (info.event.url) {
         info.jsEvent.preventDefault();
@@ -67,9 +87,16 @@ if (calendarElement) {
       }
     },
     eventDidMount: (info) => {
-      const description = info.event.extendedProps.description;
-      if (description) {
-        info.el.setAttribute("title", description);
+      const props = info.event.extendedProps;
+      const details = [
+        props.description,
+        props.customerPhone ? `SĐT: ${props.customerPhone}` : null,
+        props.paymentStatusLabel ? `TT: ${props.paymentStatusLabel}` : null,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+      if (details) {
+        info.el.setAttribute("title", details);
       }
     },
   });

@@ -1,19 +1,26 @@
+using System.Security.Claims;
 using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Fields;
 using FootballBooking.Domain.Bookings;
+using FootballBooking.Infrastructure.Identity;
 using FootballBooking.Web.ViewModels.Bookings;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FootballBooking.Web.Controllers;
 
 [Route("booking")]
-public sealed class BookingController(IBookingService bookingService, IFieldService fieldService) : Controller
+public sealed class BookingController(
+    IBookingService bookingService,
+    IFieldService fieldService,
+    UserManager<ApplicationUser> userManager) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute, CancellationToken cancellationToken)
     {
         var model = new BookingCreateViewModel();
         await PopulateCreateModelAsync(model, cancellationToken);
+        await PopulateAuthenticatedCustomerAsync(model);
         if (fieldId is not null)
         {
             model.FieldId = fieldId.Value;
@@ -51,6 +58,15 @@ public sealed class BookingController(IBookingService bookingService, IFieldServ
             return View(model);
         }
 
+        Guid? customerUserId = null;
+        var source = BookingSource.GuestWeb;
+        if (User.Identity?.IsAuthenticated == true
+            && Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedUserId))
+        {
+            customerUserId = parsedUserId;
+            source = BookingSource.CustomerAccount;
+        }
+
         var result = await bookingService.CreateBookingAsync(
             new BookingCreateCommand(
                 model.FieldId,
@@ -61,10 +77,12 @@ public sealed class BookingController(IBookingService bookingService, IFieldServ
                 model.CustomerPhone,
                 model.CustomerEmail,
                 model.Note,
-                BookingSource.GuestWeb,
-                null,
+                source,
+                 null,
                 SelectedServices(model),
-                model.PromotionCode),
+                model.PromotionCode,
+                customerUserId,
+                model.PreferredPaymentMethod),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -107,6 +125,36 @@ public sealed class BookingController(IBookingService bookingService, IFieldServ
             : string.Join(" ", result.Errors);
 
         return RedirectToAction("Index", "BookingLookup");
+    }
+
+    private async Task PopulateAuthenticatedCustomerAsync(BookingCreateViewModel model)
+    {
+        if (User.Identity?.IsAuthenticated != true
+            || !Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return;
+        }
+
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.CustomerName))
+        {
+            model.CustomerName = user.FullName;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.CustomerPhone) && !string.IsNullOrWhiteSpace(user.PhoneNumber))
+        {
+            model.CustomerPhone = user.PhoneNumber;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.CustomerEmail) && !string.IsNullOrWhiteSpace(user.Email))
+        {
+            model.CustomerEmail = user.Email;
+        }
     }
 
     private async Task PopulateCreateModelAsync(BookingCreateViewModel model, CancellationToken cancellationToken)

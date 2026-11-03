@@ -9,7 +9,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/payments")]
-[Authorize(Policy = "InternalUser")]
+[Authorize(Policy = "CanManagePayments")]
 public sealed class PaymentsController(IBookingService bookingService) : Controller
 {
     [HttpGet("")]

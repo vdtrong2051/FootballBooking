@@ -4,6 +4,8 @@ public sealed class DatabaseOptions
 {
     public const string SectionName = "Database";
 
+    public string Provider { get; init; } = "MySql";
+
     public string ServerVersion { get; init; } = "8.4.0";
 
     public bool EnableRetryOnFailure { get; init; } = true;

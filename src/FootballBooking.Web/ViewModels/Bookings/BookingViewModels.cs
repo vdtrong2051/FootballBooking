@@ -38,6 +38,9 @@ public sealed class BookingCreateViewModel
     [Display(Name = "Mã khuyến mãi")]
     public string? PromotionCode { get; set; }
 
+    [Display(Name = "Phương thức thanh toán")]
+    public PaymentMethod PreferredPaymentMethod { get; set; } = PaymentMethod.VietQr;
+
     public List<BookingServiceSelectionViewModel> Services { get; set; } = [];
     public IReadOnlyList<FieldSummaryDto> Fields { get; set; } = [];
     public IReadOnlyList<BookingSlotDto> Slots { get; set; } = [];
@@ -285,6 +288,7 @@ public sealed class AdminScheduleViewModel
     public IReadOnlyList<AdminScheduleWorkItemViewModel> WorkItems { get; set; } = [];
     public Guid? FieldId { get; set; }
     public string InitialDateText { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    public BookingStatus? Status { get; set; }
 }
 
 public sealed class AdminScheduleWorkItemViewModel

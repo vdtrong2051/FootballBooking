@@ -1,20 +1,21 @@
 @model StaffFormViewModel
+@using FootballBooking.Application.Common.Security
 @{
     var isEdit = Model.Id.HasValue;
     ViewData["Title"] = isEdit ? "Cập nhật nhân viên" : "Thêm nhân viên";
     var action = isEdit ? $"/admin/staff/{Model.Id}/edit" : "/admin/staff/create";
 }
 
-<section class="fb-card p-4">
+<section class="fb-card p-5">
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-xl font-semibold text-ink">@ViewData["Title"]</h1>
-            <p class="mt-1 text-sm text-muted">Tài khoản nhân viên chỉ được dùng trong khu vực nội bộ.</p>
+            <p class="mt-1 text-sm text-muted">Thiết lập tài khoản đăng nhập, quyền truy cập từng phân hệ và định mức tính lương tháng.</p>
         </div>
         <a class="fb-button fb-button-secondary justify-center" href="/admin/staff">Quay lại danh sách</a>
     </div>
 
-    <form class="grid gap-4" method="post" action="@action">
+    <form class="grid gap-5" method="post" action="@action">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
 
@@ -38,6 +39,51 @@
             <input class="fb-input" asp-for="Password" autocomplete="new-password" type="password" />
             <span class="text-xs text-red-700" asp-validation-for="Password"></span>
             <p class="mt-1 text-xs text-muted">Khi cập nhật, để trống nếu không đổi mật khẩu.</p>
+        </div>
+
+        <div class="border-t border-line pt-4">
+            <h2 class="text-base font-semibold text-ink">Cấu hình tính lương tháng</h2>
+            <p class="mt-1 text-xs text-muted">Công thức: Thực lĩnh = Lương cơ bản + (Lương giờ × Số giờ công) + (% Hoa hồng × Doanh thu xử lý).</p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <label class="fb-label" asp-for="BaseSalary"></label>
+                    <input class="fb-input" asp-for="BaseSalary" type="number" min="0" step="100000" />
+                    <span class="text-xs text-red-700" asp-validation-for="BaseSalary"></span>
+                </div>
+                <div>
+                    <label class="fb-label" asp-for="HourlyRate"></label>
+                    <input class="fb-input" asp-for="HourlyRate" type="number" min="0" step="1000" />
+                    <span class="text-xs text-red-700" asp-validation-for="HourlyRate"></span>
+                </div>
+                <div>
+                    <label class="fb-label" asp-for="StandardHoursPerMonth"></label>
+                    <input class="fb-input" asp-for="StandardHoursPerMonth" type="number" min="0" max="744" />
+                    <span class="text-xs text-red-700" asp-validation-for="StandardHoursPerMonth"></span>
+                </div>
+                <div>
+                    <label class="fb-label" asp-for="CommissionPercent"></label>
+                    <input class="fb-input" asp-for="CommissionPercent" type="number" min="0" max="100" step="0.1" />
+                    <span class="text-xs text-red-700" asp-validation-for="CommissionPercent"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-line pt-4">
+            <h2 class="text-base font-semibold text-ink">Phân quyền chức năng</h2>
+            <p class="mt-1 text-xs text-muted">Chọn các phân hệ nhân viên được phép truy cập trong khu vực quản trị.</p>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                @foreach (var permission in StaffPermissions.All)
+                {
+                    var isChecked = Model.SelectedPermissions.Contains(permission, StringComparer.OrdinalIgnoreCase);
+                    <label class="flex cursor-pointer items-start gap-3 rounded-ui border border-line bg-white p-3 hover:border-brand-700">
+                        <input type="checkbox" name="SelectedPermissions" value="@permission" checked="@isChecked" class="mt-0.5 rounded border-line text-brand-700 focus:ring-brand-700" />
+                        <div>
+                            <p class="text-sm font-semibold text-ink">@StaffPermissions.Label(permission)</p>
+                            <p class="text-xs text-muted">Mã quyền: <code>@permission</code></p>
+                        </div>
+                    </label>
+                }
+            </div>
         </div>
 
         <label class="flex items-center gap-2 text-sm font-medium text-ink">

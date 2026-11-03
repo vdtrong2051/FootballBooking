@@ -23,11 +23,19 @@ public sealed class DashboardController(IReportService reportService) : Controll
     }
 
     [HttpGet("/admin/api/dashboard/revenue")]
-    [Authorize(Policy = "OwnerOnly")]
+    [Authorize(Policy = "CanViewReports")]
     public async Task<IActionResult> Revenue([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
     {
         var (fromDate, toDate) = ResolveRange(from, to);
         return Json(await reportService.GetRevenueChartAsync(fromDate, toDate, cancellationToken));
+    }
+
+    [HttpGet("/admin/api/dashboard/revenue-waterfall")]
+    [Authorize(Policy = "CanViewReports")]
+    public async Task<IActionResult> RevenueWaterfall([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
+    {
+        var (fromDate, toDate) = ResolveRange(from, to);
+        return Json(await reportService.GetRevenueWaterfallChartAsync(fromDate, toDate, cancellationToken));
     }
 
     [HttpGet("/admin/api/dashboard/bookings")]
@@ -38,7 +46,7 @@ public sealed class DashboardController(IReportService reportService) : Controll
     }
 
     [HttpGet("/admin/api/dashboard/utilization")]
-    [Authorize(Policy = "OwnerOnly")]
+    [Authorize(Policy = "CanViewReports")]
     public async Task<IActionResult> Utilization([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
     {
         var (fromDate, toDate) = ResolveRange(from, to);

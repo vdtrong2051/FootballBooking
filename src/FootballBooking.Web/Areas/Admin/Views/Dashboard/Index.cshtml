@@ -38,17 +38,17 @@
             }
         </div>
 
-        <div class="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <div class="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
             <section class="fb-card min-w-0 p-4">
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 class="font-semibold text-ink">Doanh thu theo ngày</h2>
-                        <p class="text-sm text-muted">Khoảng @FormatDate(owner.Range.FromDate) - @FormatDate(owner.Range.ToDate)</p>
+                        <h2 class="font-semibold text-ink">Biểu đồ thác nước doanh thu</h2>
+                        <p class="text-sm text-muted">Cầu nối &amp; lũy kế từ @FormatDate(owner.Range.FromDate) đến @FormatDate(owner.Range.ToDate)</p>
                     </div>
                     <a class="fb-button fb-button-secondary" href="/admin/reports">Xem báo cáo</a>
                 </div>
                 <div class="mt-4 h-72 min-w-0">
-                    <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue?from=@from&to=@to" aria-label="Biểu đồ doanh thu theo ngày"></canvas>
+                    <canvas data-report-chart data-chart-url="/admin/api/dashboard/revenue-waterfall?from=@from&to=@to" aria-label="Biểu đồ thác nước doanh thu"></canvas>
                 </div>
                 <p class="mt-3 hidden rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" data-chart-error>Không tải được biểu đồ doanh thu.</p>
             </section>

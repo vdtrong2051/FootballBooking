@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using FootballBooking.Application.Bookings;
 using FootballBooking.Application.Fields;
 using FootballBooking.Domain.Bookings;
@@ -11,11 +11,15 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 
 [Area("Admin")]
 [Route("admin/schedule")]
-[Authorize(Policy = "InternalUser")]
+[Authorize(Policy = "CanManageSchedule")]
 public sealed class ScheduleController(IBookingService bookingService, IFieldService fieldService) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Index(Guid? fieldId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(
+        Guid? fieldId = null,
+        BookingStatus? status = null,
+        string? date = null,
+        CancellationToken cancellationToken = default)
     {
         ViewData["Title"] = "Lịch sân";
         ViewData["Breadcrumbs"] = new List<BreadcrumbItemViewModel>
@@ -25,21 +29,29 @@ public sealed class ScheduleController(IBookingService bookingService, IFieldSer
         };
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var recentBookings = await bookingService.ListAdminBookingsAsync(null, fieldId, null, cancellationToken);
+        var selectedDate = ParseIsoDate(date) ?? today;
+        var recentBookings = await bookingService.ListAdminBookingsAsync(null, fieldId, status, cancellationToken);
         return View(new AdminScheduleViewModel
         {
             FieldId = fieldId,
+            Status = status,
+            InitialDateText = selectedDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             Fields = await fieldService.ListAdminFieldsAsync(cancellationToken),
             WorkItems = BuildWorkItems(recentBookings, today)
         });
     }
 
     [HttpGet("/admin/api/schedule/events")]
-    public async Task<IActionResult> Events(string? start, string? end, Guid? fieldId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Events(
+        string? start,
+        string? end,
+        Guid? fieldId = null,
+        BookingStatus? status = null,
+        CancellationToken cancellationToken = default)
     {
         var startDate = ParseIsoDate(start) ?? DateOnly.FromDateTime(DateTime.UtcNow.Date);
         var endDate = ParseIsoDate(end) ?? startDate.AddDays(7);
-        var events = await bookingService.ListScheduleEventsAsync(startDate, endDate, fieldId, cancellationToken);
+        var events = await bookingService.ListScheduleEventsAsync(startDate, endDate, fieldId, status, cancellationToken);
 
         return Json(events.Select(scheduleEvent => new
         {
@@ -54,8 +66,11 @@ public sealed class ScheduleController(IBookingService bookingService, IFieldSer
             borderColor = scheduleEvent.IsBackground ? "#cbd5e1" : null,
             extendedProps = new
             {
+                fieldId = scheduleEvent.FieldId,
                 fieldName = scheduleEvent.FieldName,
                 bookingCode = scheduleEvent.BookingCode,
+                customerPhone = scheduleEvent.CustomerPhone,
+                paymentStatusLabel = scheduleEvent.PaymentStatusLabel,
                 status = scheduleEvent.Status is null ? null : BookingLabels.Status(scheduleEvent.Status.Value),
                 description = scheduleEvent.Description
             }

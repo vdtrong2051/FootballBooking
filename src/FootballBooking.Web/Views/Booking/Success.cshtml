@@ -1,6 +1,7 @@
 @model BookingSuccessViewModel
 @{
     ViewData["Title"] = "Đặt sân thành công";
+    var selectedMethod = Model.Booking.PreferredPaymentMethod;
 }
 @functions {
     private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
@@ -16,12 +17,20 @@
             <div><dt class="text-muted">Ngày</dt><dd class="font-semibold text-ink">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</dd></div>
             <div><dt class="text-muted">Khung giờ</dt><dd class="font-semibold text-ink">@FormatMinute(Model.Booking.StartMinute) - @FormatMinute(Model.Booking.EndMinute)</dd></div>
             <div><dt class="text-muted">Trạng thái</dt><dd><partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.Status(Model.Booking.Status), BookingLabels.StatusTone(Model.Booking.Status))' /></dd></div>
-            <div><dt class="text-muted">Thanh toán</dt><dd class="font-semibold text-ink">@BookingLabels.PaymentStatus(Model.Booking.PaymentStatus)</dd></div>
+            <div><dt class="text-muted">Thanh toán</dt><dd class="font-semibold text-ink">@BookingLabels.PaymentStatus(Model.Booking.PaymentStatus) (@BookingLabels.PaymentMethod(selectedMethod))</dd></div>
             <div><dt class="text-muted">Tiền sân</dt><dd class="font-semibold text-ink">@FormatMoney(Model.Booking.CourtAmount)</dd></div>
             <div><dt class="text-muted">Dịch vụ</dt><dd class="font-semibold text-ink">@FormatMoney(Model.Booking.ServiceAmount)</dd></div>
             <div><dt class="text-muted">Khuyến mãi</dt><dd class="font-semibold text-ink">-@FormatMoney(Model.Booking.DiscountAmount)</dd></div>
             <div><dt class="text-muted">Tổng tiền</dt><dd class="font-semibold text-ink">@FormatMoney(Model.Booking.TotalAmount)</dd></div>
         </dl>
+
+        <div class="mt-5 rounded-ui border border-brand-200 bg-brand-50/60 p-4">
+            <h2 class="text-sm font-semibold text-ink">Hướng dẫn thanh toán qua @BookingLabels.PaymentMethod(selectedMethod)</h2>
+            <p class="mt-1 text-sm text-muted">
+                Nội dung chuyển khoản / thanh toán: <strong class="text-ink">@Model.Booking.BookingCode - @Model.Booking.CustomerPhone</strong> · Số tiền: <strong class="text-brand-900">@FormatMoney(Model.Booking.RemainingAmount > 0 ? Model.Booking.RemainingAmount : Model.Booking.TotalAmount)</strong>
+            </p>
+        </div>
+
         @if (Model.Booking.ServiceLines.Count > 0)
         {
             <div class="mt-5 border-t border-line pt-4">
@@ -39,6 +48,10 @@
         }
         <div class="mt-5 flex flex-wrap gap-3">
             <a class="fb-button fb-button-primary" href="/booking/lookup">Tra cứu đặt sân</a>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="fb-button fb-button-secondary" href="/account/bookings">Lịch đặt của tôi</a>
+            }
             <a class="fb-button fb-button-secondary" href="/fields">Xem sân khác</a>
         </div>
     </div>

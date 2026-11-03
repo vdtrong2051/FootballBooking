@@ -17,6 +17,7 @@ public interface IBookingStore
     Task<int> CountPromotionUsagesAsync(Guid promoCodeId, string? phoneNormalized, CancellationToken cancellationToken);
     Task<IReadOnlyList<Booking>> ListBookingsForFieldDateAsync(Guid fieldId, DateOnly bookingDate, CancellationToken cancellationToken);
     Task<IReadOnlyList<BookingSummaryDto>> ListBookingsAsync(DateOnly? bookingDate, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken);
+    Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhoneNormalized, CancellationToken cancellationToken);
     Task<IReadOnlyList<BookingSummaryDto>> ListScheduleBookingsAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken);
     Task<IReadOnlyList<ScheduleBlockDto>> ListScheduleBlocksAsync(DateOnly startDate, DateOnly endDateExclusive, Guid? fieldId, CancellationToken cancellationToken);
     Task<BookingDetailDto?> GetBookingDetailByCodeAsync(string bookingCode, CancellationToken cancellationToken);
