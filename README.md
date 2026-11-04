@@ -293,3 +293,17 @@ Tài liệu phân tích và thiết kế chi tiết được lưu trong thư m�
 ## Mục đích dự án
 
 FootballBooking được phát triển nhằm thực hành xây dựng một hệ thống web có nghiệp vụ hoàn chỉnh, phân tầng rõ ràng và mô phỏng quy trình vận hành thực tế của một cơ sở kinh doanh sân bóng.
+
+## Chạy dự án
+
+docker start footballbooking-mysql
+
+cd ~/FootballBooking
+
+dotnet run \
+  --project src/FootballBooking.Web \
+  --launch-profile http
+
+npm run dev
+
+http://localhost:5100

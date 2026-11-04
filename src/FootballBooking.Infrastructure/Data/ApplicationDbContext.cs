@@ -1,6 +1,7 @@
 using FootballBooking.Infrastructure.Identity;
 using FootballBooking.Domain.Bookings;
 using FootballBooking.Domain.Fields;
+using FootballBooking.Infrastructure.Data.Converters;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,16 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<PaymentRecord> Payments => Set<PaymentRecord>();
     public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
     public DbSet<PromoCodeUsage> PromoCodeUsages => Set<PromoCodeUsage>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateOnly>()
+            .HaveConversion<DateOnlyConverter>()
+            .HaveColumnType("date");
+        configurationBuilder.Properties<DateOnly?>()
+            .HaveConversion<NullableDateOnlyConverter>()
+            .HaveColumnType("date");
+    }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
