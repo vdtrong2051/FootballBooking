@@ -1,4 +1,5 @@
 using FootballBooking.Application.Bookings;
+using FootballBooking.Application.Payments;
 using FootballBooking.Application.Common.Time;
 using FootballBooking.Application.Fields;
 using FootballBooking.Application.Reports;
@@ -6,6 +7,7 @@ using FootballBooking.Infrastructure.Bookings;
 using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Fields;
 using FootballBooking.Infrastructure.Identity;
+using FootballBooking.Infrastructure.Payments;
 using FootballBooking.Infrastructure.Reports;
 using FootballBooking.Infrastructure.SeedData;
 using FootballBooking.Infrastructure.Time;
@@ -53,6 +55,8 @@ public static class DependencyInjection
 
         services.AddScoped<IFieldStore, EfFieldStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();
+        services.Configure<PaymentOptions>(configuration.GetSection(PaymentOptions.SectionName));
+        services.AddScoped<IPaymentAttemptService, EfPaymentAttemptService>();
         services.AddScoped<IReportStore, EfReportStore>();
 
         services.AddScoped<DevelopmentFieldSeeder>();

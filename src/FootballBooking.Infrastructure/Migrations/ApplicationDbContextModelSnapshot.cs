@@ -255,6 +255,32 @@ namespace FootballBooking.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FootballBooking.Domain.Payments.PaymentAttempt", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
+                    b.Property<Guid>("BookingId").HasColumnType("char(36)");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("datetime");
+                    b.Property<DateTimeOffset>("ExpiresAtUtc").HasColumnType("datetime");
+                    b.Property<string>("ExternalReference").HasMaxLength(100).HasColumnType("varchar(100)");
+                    b.Property<int>("Method").HasColumnType("int");
+                    b.Property<string>("Note").HasMaxLength(500).HasColumnType("varchar(500)");
+                    b.Property<DateTimeOffset?>("ProcessedAtUtc").HasColumnType("datetime");
+                    b.Property<long?>("ReportedAmount").HasColumnType("bigint");
+                    b.Property<string>("RequestCode").IsRequired().HasMaxLength(64).HasColumnType("varchar(64)");
+                    b.Property<int>("Status").HasColumnType("int");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("datetime");
+                    b.Property<Guid?>("VerifiedByUserId").HasColumnType("char(36)");
+                    b.Property<long>("Amount").HasColumnType("bigint");
+                    b.HasKey("Id");
+                    b.HasIndex("BookingId", "Status");
+                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("ExternalReference").IsUnique();
+                    b.HasIndex("RequestCode").IsUnique();
+                    b.ToTable("PaymentAttempts");
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithMany().HasForeignKey("BookingId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                });
+
             modelBuilder.Entity("FootballBooking.Domain.Bookings.PromoCode", b =>
                 {
                     b.Property<Guid>("Id")

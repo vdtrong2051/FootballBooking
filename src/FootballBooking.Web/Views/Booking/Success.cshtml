@@ -47,7 +47,11 @@
             </div>
         }
         <div class="mt-5 flex flex-wrap gap-3">
-            <a class="fb-button fb-button-primary" href="/booking/lookup">Tra cứu đặt sân</a>
+            @if (Model.Booking.Status == FootballBooking.Domain.Bookings.BookingStatus.PendingPayment)
+            {
+                <a class="fb-button fb-button-primary" href="/booking/pay/@Model.Booking.BookingCode">Tiếp tục thanh toán</a>
+            }
+            <a class="fb-button fb-button-secondary" href="/booking/lookup">Tra cứu đặt sân</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <a class="fb-button fb-button-secondary" href="/account/bookings">Lịch đặt của tôi</a>

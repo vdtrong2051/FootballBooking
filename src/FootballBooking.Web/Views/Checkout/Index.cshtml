@@ -1,0 +1,147 @@
+@model FootballBooking.Web.ViewModels.Payments.CheckoutPageViewModel
+@using FootballBooking.Domain.Bookings
+@using FootballBooking.Domain.Payments
+@{
+    ViewData["Title"] = "Thanh toán đặt sân";
+    var latest = Model.LatestAttempt;
+    var now = DateTimeOffset.UtcNow;
+    var active = Model.Attempts.FirstOrDefault(x => x.Status == PaymentAttemptStatus.Pending && x.ExpiresAtUtc > now);
+}
+@functions {
+    private static string Money(long value) => string.Format("{0:N0} ₫", value).Replace(",", ".");
+    private static string Minute(int value) => $"{value / 60:00}:{value % 60:00}";
+}
+
+<section class="fb-container grid gap-5 py-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <div class="space-y-5">
+        <section class="fb-card p-5">
+            <h1 class="text-2xl font-semibold text-ink">Thanh toán đặt sân</h1>
+            <p class="mt-2 text-sm text-muted">Mã đặt sân <strong>@Model.Booking.BookingCode</strong>. Việc chọn QR hoặc chuyển khoản <strong>không phải</strong> bằng chứng đã thanh toán.</p>
+            @if (TempData["ErrorMessage"] is string error)
+            {
+                <p class="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">@error</p>
+            }
+            @if (TempData["SuccessMessage"] is string message)
+            {
+                <p class="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">@message</p>
+            }
+            @if (Model.Booking.Status == BookingStatus.PendingPayment && Model.Booking.ExpiresAtUtc > now)
+            {
+                <div class="mt-4 rounded-ui border border-brand-200 bg-brand-50 p-3 text-sm text-brand-900">
+                    Thời gian giữ sân còn lại: <strong id="gd2-countdown" data-expires="@Model.Booking.ExpiresAtUtc?.ToUnixTimeMilliseconds()">—</strong>
+                </div>
+            }
+            else
+            {
+                <p class="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    Booking không còn giữ sân ở trạng thái chờ thanh toán. Không chuyển tiền theo QR cũ. Liên hệ nhân viên để được hỗ trợ.
+                </p>
+            }
+        </section>
+
+        @if (Model.Booking.Status == BookingStatus.PendingPayment && Model.Booking.ExpiresAtUtc > now)
+        {
+            <section class="fb-card p-5">
+                <h2 class="font-semibold text-ink">1. Chọn phương thức thanh toán</h2>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    @foreach (var method in new[] { PaymentMethod.VietQr, PaymentMethod.BankTransfer, PaymentMethod.Cash, PaymentMethod.Card, PaymentMethod.MoMo, PaymentMethod.ZaloPay })
+                    {
+                        var unavailable = ((method is PaymentMethod.VietQr or PaymentMethod.BankTransfer) && !Model.BankConfigured)
+                            || ((method is PaymentMethod.MoMo or PaymentMethod.ZaloPay) && !Model.EnableDemoGateway);
+                        <form method="post" action="/booking/pay/@Model.Booking.BookingCode/start">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="method" value="@method" />
+                            <button type="submit" disabled="@unavailable" class="fb-button fb-button-secondary w-full disabled:cursor-not-allowed disabled:opacity-40">
+                                @FootballBooking.Web.ViewModels.Payments.CheckoutPageViewModel.MethodName(method)
+                            </button>
+                        </form>
+                    }
+                </div>
+                @if (!Model.BankConfigured)
+                {
+                    <p class="mt-3 text-xs text-muted">VietQR chưa được bật vì chưa cấu hình thông tin ngân hàng. Hãy dùng lựa chọn tại quầy hoặc liên hệ nhân viên.</p>
+                }
+            </section>
+        }
+
+        @if (active is not null)
+        {
+            <section class="fb-card p-5">
+                <h2 class="font-semibold text-ink">2. Hướng dẫn thanh toán đang chờ</h2>
+                <p class="mt-2 text-sm text-muted">Phương thức: @FootballBooking.Web.ViewModels.Payments.CheckoutPageViewModel.MethodName(active.Method)</p>
+                <p class="mt-2 text-base font-semibold text-brand-900">Số tiền: @Money(active.Amount)</p>
+                <p class="mt-2 text-sm">Mã tham chiếu: <code class="font-semibold">@active.RequestCode</code></p>
+                @if (active.Method == PaymentMethod.VietQr && Model.VietQrImageUrl is not null)
+                {
+                    <img class="mt-4 max-w-full rounded-ui border border-line" loading="lazy" referrerpolicy="no-referrer" width="360" height="430" src="@Model.VietQrImageUrl" alt="VietQR chuyển khoản theo số tiền và mã tham chiếu" />
+                }
+                @if (active.Method is PaymentMethod.BankTransfer or PaymentMethod.VietQr)
+                {
+                    <p class="mt-3 text-sm text-muted">Ngân hàng nhận tiền: @Model.BankAccountName · STK @Model.BankAccountNumber. Chuyển đúng số tiền và mã tham chiếu.</p>
+                    <p class="mt-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Sau khi chuyển khoản, nhân viên phải kiểm tra giao dịch trong ngân hàng rồi mới xác nhận. Không gửi ảnh chụp giao dịch làm bằng chứng tự động.</p>
+                }
+                @if (active.Method is PaymentMethod.Cash or PaymentMethod.Card)
+                {
+                    <p class="mt-3 text-sm text-muted">Vui lòng thanh toán tại quầy. Chỉ nhân viên có quyền mới có thể xác nhận đã thu tiền.</p>
+                }
+                @if (active.Method is PaymentMethod.MoMo or PaymentMethod.ZaloPay)
+                {
+                    <p class="mt-3 text-sm text-muted">Đây là gateway giả lập tại môi trường Development; không liên kết ví thật.</p>
+                }
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <button id="gd2-refresh" class="fb-button fb-button-primary" type="button">Kiểm tra trạng thái</button>
+                    <a class="fb-button fb-button-secondary" href="/booking/success/@Model.Booking.BookingCode">Xem booking</a>
+                </div>
+                <p id="gd2-status" class="mt-3 text-sm text-muted" role="status" aria-live="polite">Đang chờ xác minh thanh toán.</p>
+            </section>
+        }
+        else if (latest is not null)
+        {
+            <section class="fb-card p-5">
+                <h2 class="font-semibold text-ink">Trạng thái lần thử gần nhất</h2>
+                <p class="mt-3 text-sm">@latest.Status</p>
+                @if (latest.Status == PaymentAttemptStatus.NeedsReconciliation)
+                {
+                    <p class="mt-3 text-sm text-amber-900">Khoản tiền cần được nhân viên đối soát riêng. Không tự tạo lại lịch hoặc xác nhận thanh toán.</p>
+                }
+            </section>
+        }
+    </div>
+
+    <aside class="space-y-4">
+        <section class="fb-card p-4">
+            <h2 class="font-semibold text-ink">Thông tin booking</h2>
+            <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex justify-between gap-3"><dt class="text-muted">Sân</dt><dd>@Model.Booking.FieldName</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-muted">Ngày chơi</dt><dd>@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-muted">Khung giờ</dt><dd>@Minute(Model.Booking.StartMinute) - @Minute(Model.Booking.EndMinute)</dd></div>
+                <div class="border-t border-line pt-3 flex justify-between gap-3 font-semibold"><dt>Tổng tiền</dt><dd>@Money(Model.Booking.TotalAmount)</dd></div>
+                <div class="flex justify-between gap-3"><dt>Đã ghi nhận</dt><dd>@Money(Model.Booking.PaidAmount)</dd></div>
+                <div class="flex justify-between gap-3 text-brand-900 font-semibold"><dt>Còn lại</dt><dd>@Money(Model.Booking.RemainingAmount)</dd></div>
+            </dl>
+        </section>
+    </aside>
+</section>
+<script>
+(() => {
+  const timer = document.getElementById('gd2-countdown');
+  function count() {
+    if (!timer) return;
+    const remaining = Math.max(0, Math.ceil((Number(timer.dataset.expires) - Date.now()) / 1000));
+    timer.textContent = remaining === 0 ? 'Đã hết hạn' : `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+  }
+  count(); setInterval(count, 1000);
+  const refresh = document.getElementById('gd2-refresh');
+  if (!refresh) return;
+  refresh.addEventListener('click', async () => {
+    const output = document.getElementById('gd2-status');
+    try {
+      const res = await fetch('/booking/pay/@Model.Booking.BookingCode/status', { cache: 'no-store', credentials: 'same-origin' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      output.textContent = `Booking: ${data.bookingStatus}. Thanh toán: ${data.paymentStatus}. Lần thử: ${data.attemptStatus ?? 'chưa có'}.`;
+      if (data.attemptStatus === 'Succeeded' || data.attemptStatus === 'NeedsReconciliation') location.reload();
+    } catch { output.textContent = 'Chưa thể tải trạng thái. Thử lại sau.'; }
+  });
+})();
+</script>
