@@ -1,0 +1,26 @@
+/* GD4-A public pages only: scoped design system; admin and account remain unchanged. */
+@layer components {
+  .fb4-section { @apply py-12 sm:py-16; }
+  .fb4-kicker { @apply text-xs font-bold uppercase tracking-[0.22em] text-brand-700; }
+  .fb4-heading { @apply text-2xl font-bold tracking-tight text-ink sm:text-3xl; }
+  .fb4-lead { @apply text-sm leading-7 text-muted sm:text-base; }
+  .fb4-surface { @apply overflow-hidden rounded-2xl border border-line bg-white shadow-sm; }
+  .fb4-pill { @apply inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800; }
+  .fb4-field-card { @apply flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-white transition duration-200 hover:-translate-y-1 hover:border-brand-100 hover:shadow-lg; }
+  .fb4-field-media { @apply relative aspect-[16/10] overflow-hidden bg-slate-100; }
+  .fb4-field-media img { @apply h-full w-full object-cover transition duration-500 ; }
+  .fb4-field-card:hover .fb4-field-media img { transform: scale(1.035); }
+  .fb4-field-card-body { @apply flex flex-1 flex-col gap-3 p-5; }
+  .fb4-price { @apply text-lg font-bold tracking-tight text-brand-800; }
+  .fb4-search-shell { @apply rounded-2xl border border-white/70 bg-white p-4 shadow-xl shadow-slate-900/10 sm:p-5; }
+  .fb4-stat { @apply flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white backdrop-blur-sm; }
+  .fb4-subnav { @apply flex flex-wrap gap-2 rounded-2xl bg-slate-100 p-1.5; }
+  .fb4-subnav a { @apply rounded-xl px-4 py-2 text-sm font-semibold text-muted transition hover:bg-white hover:text-brand-800; }
+  .fb4-subnav a[aria-current="page"] { @apply bg-white text-brand-800 shadow-sm; }
+  .fb4-data-row { @apply flex flex-wrap items-center justify-between gap-3 border-b border-line py-3.5 text-sm last:border-0; }
+  .fb4-hero { background: linear-gradient(125deg,#0a3524 0%,#12543a 52%,#267754 100%); }
+  .fb4-photo-shade { background: linear-gradient(0deg,rgba(8,28,19,.74),rgba(8,28,19,.06) 62%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fb4-field-card, .fb4-field-media img { transition: none !important; transform: none !important; }
+}

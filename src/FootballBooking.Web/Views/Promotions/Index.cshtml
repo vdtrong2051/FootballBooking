@@ -3,40 +3,10 @@
     ViewData["Title"] = "Khuyến mãi";
 }
 @functions {
-    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
-    private static string FormatDiscount(PromoCodeDto promotion)
-        => promotion.DiscountType == PromoDiscountType.FixedAmount
-            ? FormatMoney(promotion.DiscountValue)
-            : $"{promotion.DiscountValue / 100m:0.##}%";
+    private static string Discount(PromoCodeDto p) => p.DiscountType == PromoDiscountType.FixedAmount ? $"{p.DiscountValue:N0} ₫" : $"{p.DiscountValue / 100m:0.##}%";
 }
-
-<section class="border-b border-line bg-white">
-    <div class="fb-container py-8">
-        <p class="text-sm font-semibold uppercase text-brand-800">Khuyến mãi</p>
-        <h1 class="mt-2 text-3xl font-semibold text-ink">Mã khuyến mãi đang áp dụng</h1>
-        <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">Nhập mã trong bước đặt sân để hệ thống tự kiểm tra điều kiện và trừ tiền trên máy chủ.</p>
-    </div>
-</section>
-
-<section class="fb-container py-8">
-    <div class="grid gap-4 md:grid-cols-2">
-        @foreach (var promotion in Model.Promotions)
-        {
-            <article class="fb-card p-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <p class="text-sm font-semibold uppercase text-brand-800">@promotion.Code</p>
-                        <h2 class="mt-1 font-semibold text-ink">@promotion.Name</h2>
-                    </div>
-                    <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel("Đang áp dụng", "success")' />
-                </div>
-                <dl class="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-                    <div><dt class="text-muted">Ưu đãi</dt><dd class="font-semibold text-ink">@FormatDiscount(promotion)</dd></div>
-                    <div><dt class="text-muted">Giá trị đặt sân tối thiểu</dt><dd class="font-semibold text-ink">@FormatMoney(promotion.MinimumOrderAmount)</dd></div>
-                    <div><dt class="text-muted">Từ ngày</dt><dd class="font-semibold text-ink">@promotion.StartsAtUtc.ToString("dd/MM/yyyy")</dd></div>
-                    <div><dt class="text-muted">Đến ngày</dt><dd class="font-semibold text-ink">@promotion.EndsAtUtc.ToString("dd/MM/yyyy")</dd></div>
-                </dl>
-            </article>
-        }
-    </div>
+<section class="border-b border-line bg-white"><div class="fb-container py-12 sm:py-16"><p class="fb4-kicker">Ưu đãi hiện có</p><h1 class="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Ưu đãi cho mỗi cuộc hẹn</h1><p class="fb4-lead mt-3 max-w-2xl">Nhập mã khi đặt sân để hệ thống kiểm tra điều kiện và tính mức giảm phù hợp.</p><div class="mt-7 fb4-subnav"><a href="/fields">Sân bóng</a><a href="/services">Dịch vụ</a><a href="/promotions" aria-current="page">Khuyến mãi</a></div></div></section>
+<section class="fb-container fb4-section">
+    @if (Model.Promotions.Count == 0) { <div class="fb4-surface p-8 text-sm text-muted">Chưa có mã khuyến mãi đang áp dụng.</div> }
+    else { <div class="grid gap-5 lg:grid-cols-2">@foreach (var promo in Model.Promotions) { <article class="fb4-surface flex flex-col gap-4 p-6 sm:flex-row sm:items-start"><div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-2xl font-extrabold text-brand-800">@Discount(promo)</div><div class="min-w-0 flex-1"><p class="fb4-kicker">@promo.Code</p><h2 class="mt-2 text-lg font-bold">@promo.Name</h2><dl class="mt-3 space-y-2 text-sm text-muted"><div>Đơn tối thiểu: <strong class="text-ink">@($"{promo.MinimumOrderAmount:N0}") ₫</strong></div><div>Áp dụng: @promo.StartsAtUtc.ToString("dd/MM/yyyy") – @promo.EndsAtUtc.ToString("dd/MM/yyyy")</div></dl><a class="mt-5 inline-flex text-sm font-bold text-brand-800 hover:underline" href="/booking">Đặt sân với ưu đãi →</a></div></article> }</div> }
 </section>

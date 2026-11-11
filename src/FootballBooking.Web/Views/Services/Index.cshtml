@@ -2,28 +2,8 @@
 @{
     ViewData["Title"] = "Dịch vụ";
 }
-@functions {
-    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
-}
-
-<section class="border-b border-line bg-white">
-    <div class="fb-container py-8">
-        <p class="text-sm font-semibold uppercase text-brand-800">Dịch vụ</p>
-        <h1 class="mt-2 text-3xl font-semibold text-ink">Dịch vụ đi kèm khi đặt sân</h1>
-        <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">Chọn thêm bóng, áo phân đội, nước uống hoặc trọng tài ngay trong form đặt sân để nhân viên chuẩn bị trước giờ thi đấu.</p>
-    </div>
-</section>
-
-<section class="fb-container py-8">
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        @foreach (var service in Model.Services)
-        {
-            <article class="fb-card p-4">
-                <h2 class="font-semibold text-ink">@service.Name</h2>
-                <p class="mt-2 min-h-12 text-sm text-muted">@service.Description</p>
-                <p class="mt-4 text-lg font-semibold text-brand-900">@FormatMoney(service.UnitPrice)</p>
-                <p class="text-xs text-muted">Tính theo @service.UnitName</p>
-            </article>
-        }
-    </div>
+<section class="border-b border-line bg-white"><div class="fb-container py-12 sm:py-16"><p class="fb4-kicker">Tiện ích sân bóng</p><h1 class="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Dịch vụ cho trận đấu trọn vẹn</h1><p class="fb4-lead mt-3 max-w-2xl">Chọn các dịch vụ phù hợp khi đặt sân. Giá được xác nhận trong bước đặt lịch.</p><div class="mt-7 fb4-subnav"><a href="/fields">Sân bóng</a><a href="/services" aria-current="page">Dịch vụ</a><a href="/promotions">Khuyến mãi</a></div></div></section>
+<section class="fb-container fb4-section">
+    @if (Model.Services.Count == 0) { <div class="fb4-surface p-8 text-sm text-muted">Chưa có dịch vụ đang mở bán.</div> }
+    else { <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">@foreach (var service in Model.Services) { <article class="fb4-surface flex min-h-52 flex-col p-6"><span class="fb4-pill w-fit">Dịch vụ đi kèm</span><h2 class="mt-4 text-lg font-bold text-ink">@service.Name</h2><p class="mt-2 flex-1 text-sm leading-7 text-muted">@service.Description</p><div class="mt-5 flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4"><div><p class="text-xl font-extrabold text-brand-800">@($"{service.UnitPrice:N0}") ₫</p><p class="text-xs text-muted">mỗi @service.UnitName</p></div><a class="text-sm font-bold text-brand-800 hover:underline" href="/booking">Chọn khi đặt sân →</a></div></article> }</div> }
 </section>

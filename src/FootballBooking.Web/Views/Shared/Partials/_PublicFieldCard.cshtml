@@ -1,0 +1,37 @@
+@model FootballBooking.Application.Fields.FieldSummaryDto
+@{
+    var photo = !string.IsNullOrWhiteSpace(Model.CoverImagePath) && !Model.CoverImagePath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+        ? Model.CoverImagePath
+        : Model.Slug switch
+        {
+            "san-5b" => "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=920&q=80",
+            "san-7a" => "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=920&q=80",
+            _ => "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=920&q=80"
+        };
+    var price = Model.PriceFrom is null ? "Liên hệ giá" : $"Từ {Model.PriceFrom.Value:N0} ₫/giờ";
+}
+<article class="fb4-field-card">
+    <a class="fb4-field-media block" href="/fields/@Model.Slug" aria-label="Xem chi tiết @Model.Name">
+        <img src="@photo" alt="@(Model.CoverImageAltText ?? Model.Name)" loading="lazy" />
+        <span class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-brand-800 shadow-sm">@Model.FieldType</span>
+    </a>
+    <div class="fb4-field-card-body">
+        <div>
+            <h3 class="text-lg font-bold tracking-tight text-ink"><a class="hover:text-brand-800" href="/fields/@Model.Slug">@Model.Name</a></h3>
+            <p class="mt-1 text-sm leading-6 text-muted">@(string.IsNullOrWhiteSpace(Model.Address) ? "Sân bóng cỏ nhân tạo" : Model.Address)</p>
+        </div>
+        @if (Model.Amenities.Count > 0)
+        {
+            <div class="flex flex-wrap gap-1.5">
+                @foreach (var amenity in Model.Amenities.Take(2))
+                {
+                    <span class="rounded-md bg-slate-100 px-2 py-1 text-xs text-muted">@amenity</span>
+                }
+            </div>
+        }
+        <div class="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <span class="fb4-price">@price</span>
+            <a class="fb-button fb-button-primary min-h-9 px-3" href="/booking?fieldId=@Model.Id" aria-label="Đặt @Model.Name">Đặt sân</a>
+        </div>
+    </div>
+</article>

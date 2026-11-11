@@ -1,72 +1,16 @@
 @model FootballBooking.Web.ViewModels.Fields.FieldListPageViewModel
-@using FootballBooking.Domain.Fields
 @{
     ViewData["Title"] = "Sân bóng";
 }
-
-@functions {
-    private static string CoverImage(string slug, string? currentPath) => currentPath is not null && !currentPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
-        ? currentPath
-        : slug switch
-        {
-            "san-5b" => "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=900&q=80",
-            "san-7a" => "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80",
-            _ => "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80"
-        };
-    private static string FormatMoney(long? amount) => amount is null ? "Liên hệ" : string.Format("{0:N0} ₫/giờ", amount).Replace(",", ".");
-    private static string StatusLabel(FieldStatus status) => status switch
-    {
-        FieldStatus.Active => "Đang nhận đặt sân",
-        FieldStatus.TemporarilyClosed => "Tạm đóng",
-        FieldStatus.Maintenance => "Bảo trì",
-        FieldStatus.Inactive => "Ngừng khai thác",
-        _ => "Không xác định"
-    };
-    private static string StatusTone(FieldStatus status) => status == FieldStatus.Active ? "success" : status == FieldStatus.Maintenance ? "warning" : "neutral";
-}
-
 <section class="border-b border-line bg-white">
-    <div class="fb-container py-8">
-        <p class="text-sm font-semibold uppercase text-brand-700">Danh sách sân</p>
-        <h1 class="mt-2 text-3xl font-semibold text-ink">Chọn sân phù hợp với đội của bạn</h1>
-        <p class="mt-3 max-w-2xl text-sm text-muted">Thông tin sân, tiện ích, giá tham khảo và đường dẫn đặt sân được lấy từ dữ liệu quản lý sân.</p>
+    <div class="fb-container py-12 sm:py-16">
+        <p class="fb4-kicker">Khám phá sân bóng</p>
+        <div class="mt-3 flex flex-wrap items-end justify-between gap-5"><div><h1 class="max-w-2xl text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Tìm sân phù hợp với đội của bạn</h1><p class="fb4-lead mt-3 max-w-2xl">Duyệt các sân đang mở đặt, xem tiện ích, bảng giá và chọn giờ trống.</p></div><a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a></div>
+        <div class="mt-8 fb4-subnav" aria-label="Điều hướng nhanh"><a href="/fields" aria-current="page">Tất cả sân</a><a href="/services">Dịch vụ</a><a href="/promotions">Khuyến mãi</a></div>
     </div>
 </section>
-
-<section class="fb-container py-8">
-    @if (Model.Fields.Count == 0)
-    {
-        <partial name="Partials/_EmptyState" model='new EmptyStateViewModel("Chưa có sân đang hoạt động", "Chủ sân chưa mở sân nào cho website công khai.")' />
-    }
-    else
-    {
-        <div class="grid gap-4 md:grid-cols-3">
-            @foreach (var field in Model.Fields)
-            {
-                <article class="fb-card overflow-hidden">
-                    <img class="aspect-[16/9] w-full object-cover" src="@CoverImage(field.Slug, field.CoverImagePath)" alt="@(field.CoverImageAltText ?? field.Name)" />
-                    <div class="p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h2 class="text-lg font-semibold text-ink">@field.Name</h2>
-                                <p class="mt-1 text-sm text-muted">@field.FieldType · @(field.Capacity?.ToString() ?? "Nhiều") người</p>
-                            </div>
-                            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(StatusLabel(field.Status), StatusTone(field.Status))' />
-                        </div>
-                        <p class="mt-3 text-sm text-muted">@field.Address</p>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach (var amenity in field.Amenities.Take(3))
-                            {
-                                <span class="rounded-ui border border-line bg-slate-50 px-2 py-1 text-xs text-muted">@amenity</span>
-                            }
-                        </div>
-                        <div class="mt-4 flex items-center justify-between gap-3">
-                            <span class="font-semibold text-brand-800">Từ @FormatMoney(field.PriceFrom)</span>
-                            <a class="fb-button fb-button-secondary min-h-9 px-3" href="/fields/@field.Slug">Xem chi tiết</a>
-                        </div>
-                    </div>
-                </article>
-            }
-        </div>
-    }
+<section class="fb-container fb4-section">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3"><h2 class="text-lg font-bold text-ink">Sân đang nhận đặt</h2><p class="text-sm text-muted">@Model.Fields.Count sân</p></div>
+    @if (Model.Fields.Count == 0) { <div class="fb4-surface p-8"><partial name="Partials/_EmptyState" model='new EmptyStateViewModel("Chưa có sân đang hoạt động", "Chủ sân chưa mở sân nào cho website công khai.")' /></div> }
+    else { <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach (var field in Model.Fields) { <partial name="Partials/_PublicFieldCard" model="field" /> }</div> }
 </section>

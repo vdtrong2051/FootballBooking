@@ -2,6 +2,7 @@
 @plugin "@tailwindcss/forms";
 @import "../../../node_modules/preline/variants.css";
 @import "./account-center.css";
+@import "./public-refresh.css";
 
 @source "../Views/**/*.cshtml";
 @source "../Areas/**/*.cshtml";

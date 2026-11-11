@@ -1,5 +1,4 @@
 @model FootballBooking.Web.ViewModels.Fields.FieldDetailPageViewModel
-@using FootballBooking.Domain.Fields
 @{
     ViewData["Title"] = Model.Field.Name;
     var cover = Model.Field.Images.FirstOrDefault(image => image.IsCover) ?? Model.Field.Images.FirstOrDefault();
@@ -7,119 +6,41 @@
         ? cover.StoragePath
         : Model.Field.Slug switch
         {
-            "san-5b" => "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1200&q=80",
-            "san-7a" => "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1200&q=80",
-            _ => "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=1200&q=80"
+            "san-5b" => "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1400&q=85",
+            "san-7a" => "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1400&q=85",
+            _ => "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=1400&q=85"
         };
+    var activeRules = Model.Field.PricingRules.Where(rule => rule.IsActive).OrderBy(rule => rule.StartMinute).ToList();
 }
-
 @functions {
-    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫/giờ", amount).Replace(",", ".");
-    private static string FormatMinute(int? minute)
-    {
-        if (minute is null)
-        {
-            return "--:--";
-        }
-
-        return $"{minute.Value / 60:00}:{minute.Value % 60:00}";
-    }
-
-    private static string DayName(int day) => day switch
-    {
-        0 => "Chủ nhật",
-        1 => "Thứ hai",
-        2 => "Thứ ba",
-        3 => "Thứ tư",
-        4 => "Thứ năm",
-        5 => "Thứ sáu",
-        6 => "Thứ bảy",
-        _ => "Không rõ"
-    };
+    private static string Minute(int? value) => value is null ? "--:--" : $"{value.Value / 60:00}:{value.Value % 60:00}";
+    private static string Money(long value) => $"{value:N0} ₫/giờ";
+    private static string Day(int day) => day switch { 0 => "Chủ nhật", 1 => "Thứ hai", 2 => "Thứ ba", 3 => "Thứ tư", 4 => "Thứ năm", 5 => "Thứ sáu", 6 => "Thứ bảy", _ => "Không rõ" };
 }
-
-<section class="border-b border-line bg-white">
-    <div class="fb-container grid gap-6 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div>
-            <nav class="mb-4 text-sm text-muted"><a class="hover:text-brand-800" href="/fields">Sân bóng</a> / <span class="font-medium text-ink">@Model.Field.Name</span></nav>
-            <h1 class="text-3xl font-semibold text-ink">@Model.Field.Name</h1>
-            <p class="mt-2 text-base text-muted">@Model.Field.FieldType · sức chứa @(Model.Field.Capacity?.ToString() ?? "linh hoạt") người</p>
-            <p class="mt-4 max-w-2xl text-sm leading-6 text-muted">@Model.Field.Description</p>
-            <div class="mt-5 flex flex-wrap gap-2">
-                @foreach (var amenity in Model.Field.Amenities)
-                {
-                    <span class="rounded-ui border border-brand-100 bg-brand-50 px-2 py-1 text-xs font-medium text-brand-800">@amenity</span>
-                }
+<section class="bg-white pb-8 pt-8 sm:pb-12 sm:pt-10">
+    <div class="fb-container">
+        <nav class="mb-6 text-sm text-muted" aria-label="Đường dẫn"><a class="hover:text-brand-800" href="/fields">Danh sách sân</a><span class="mx-2">/</span><span class="font-semibold text-ink">@Model.Field.Name</span></nav>
+        <div class="grid gap-7 lg:grid-cols-[1.18fr_.82fr] lg:items-center">
+            <div class="relative min-w-0 overflow-hidden rounded-[1.5rem]"><img class="aspect-[16/10] w-full object-cover" src="@coverPath" alt="@(cover?.AltText ?? Model.Field.Name)" /><div class="fb4-photo-shade absolute inset-0"></div><span class="absolute bottom-5 left-5 rounded-full border border-white/30 bg-white/90 px-3 py-1 text-xs font-bold text-brand-800">@Model.Field.FieldType</span></div>
+            <div class="min-w-0"><p class="fb4-kicker">Chi tiết sân bóng</p><h1 class="mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">@Model.Field.Name</h1><p class="mt-3 text-sm leading-7 text-muted">@Model.Field.Description</p>
+                <div class="mt-5 flex flex-wrap gap-2">@foreach (var amenity in Model.Field.Amenities) { <span class="fb4-pill">@amenity</span> }</div>
+                <div class="mt-6 flex flex-wrap gap-3"><a class="fb-button fb-button-primary px-6" href="#dat-san">Xem giờ &amp; đặt sân</a><a class="fb-button fb-button-secondary" href="#bang-gia">Xem bảng giá</a></div>
             </div>
         </div>
-        <img class="fb-card aspect-[16/9] w-full object-cover" src="@coverPath" alt="@(cover?.AltText ?? Model.Field.Name)" />
     </div>
 </section>
-
-<section class="fb-container grid gap-5 py-8 lg:grid-cols-[1.2fr_0.8fr]">
-    <div class="space-y-5">
-        <section class="fb-card overflow-hidden">
-            <div class="border-b border-line px-4 py-3">
-                <h2 class="font-semibold text-ink">Giờ hoạt động</h2>
-            </div>
-            <div class="grid divide-y divide-line">
-                @foreach (var hour in Model.Field.OperatingHours)
-                {
-                    <div class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                        <span class="font-medium text-ink">@DayName(hour.DayOfWeek)</span>
-                        <span class="text-muted">@(hour.IsClosed ? "Đóng cửa" : $"{FormatMinute(hour.OpenMinute)} - {FormatMinute(hour.CloseMinute)}")</span>
-                    </div>
-                }
-            </div>
+<section class="fb-container fb4-section grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,.42fr)]">
+    <div class="min-w-0 space-y-7">
+        <section class="fb4-surface" aria-labelledby="gio-hoat-dong"><div class="border-b border-line px-6 py-5"><h2 class="text-lg font-bold text-ink" id="gio-hoat-dong">Giờ hoạt động</h2><p class="mt-1 text-sm text-muted">Lịch mở cửa theo từng ngày trong tuần</p></div>
+            <div class="grid px-6 sm:grid-cols-2 sm:gap-x-7">@foreach (var hour in Model.Field.OperatingHours.OrderBy(hour => hour.DayOfWeek)) { <div class="fb4-data-row"><span class="font-medium text-ink">@Day(hour.DayOfWeek)</span><span class="text-muted">@(hour.IsClosed ? "Đóng cửa" : $"{Minute(hour.OpenMinute)} – {Minute(hour.CloseMinute)}")</span></div> }</div>
         </section>
-
-        <section class="fb-card overflow-hidden">
-            <div class="border-b border-line px-4 py-3">
-                <h2 class="font-semibold text-ink">Bảng giá tham khảo</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="fb-table">
-                    <thead>
-                        <tr>
-                            <th>Tên giá</th>
-                            <th>Khung giờ</th>
-                            <th>Giá</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-line bg-white">
-                        @foreach (var rule in Model.Field.PricingRules.Where(rule => rule.IsActive))
-                        {
-                            <tr>
-                                <td class="font-medium">@rule.Name</td>
-                                <td>@FormatMinute(rule.StartMinute) - @FormatMinute(rule.EndMinute)</td>
-                                <td>@FormatMoney(rule.PricePerHour)</td>
-                                <td><partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel("Đang áp dụng", "success")' /></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+        <section class="fb4-surface" id="bang-gia" aria-labelledby="bang-gia-title"><div class="border-b border-line px-6 py-5"><h2 class="text-lg font-bold text-ink" id="bang-gia-title">Bảng giá tham khảo</h2><p class="mt-1 text-sm text-muted">Giá cuối cùng được xác nhận khi chọn khung giờ</p></div>
+            @if (activeRules.Count == 0) { <p class="p-6 text-sm text-muted">Sân chưa có bảng giá đang áp dụng.</p> }
+            else { <div class="overflow-x-auto"><table class="fb-table"><thead><tr><th>Tên giá</th><th>Giờ</th><th class="text-right">Giá theo giờ</th></tr></thead><tbody class="divide-y divide-line">@foreach (var rule in activeRules) { <tr><td class="font-semibold">@rule.Name</td><td class="whitespace-nowrap">@Minute(rule.StartMinute) – @Minute(rule.EndMinute)</td><td class="whitespace-nowrap text-right font-bold text-brand-800">@Money(rule.PricePerHour)</td></tr> }</tbody></table></div> }
         </section>
     </div>
-
-    <aside class="space-y-4">
-        <section class="fb-card p-4">
-            <h2 class="font-semibold text-ink">Thông tin sân</h2>
-            <dl class="mt-3 grid gap-3 text-sm">
-                <div class="flex justify-between gap-3"><dt class="text-muted">Mã sân</dt><dd class="font-medium text-ink">@Model.Field.Code</dd></div>
-                <div class="flex justify-between gap-3"><dt class="text-muted">Loại sân</dt><dd class="font-medium text-ink">@Model.Field.FieldType</dd></div>
-                <div class="flex justify-between gap-3"><dt class="text-muted">Đặt tối thiểu</dt><dd class="font-medium text-ink">@Model.Field.MinimumBookingMinutes phút</dd></div>
-                <div class="flex justify-between gap-3"><dt class="text-muted">Bước giờ</dt><dd class="font-medium text-ink">@Model.Field.SlotStepMinutes phút</dd></div>
-            </dl>
-            <form class="mt-4 grid gap-3" action="/booking" method="get">
-                <input type="hidden" name="fieldId" value="@Model.Field.Id" />
-                <div>
-                    <label class="fb-label" for="date">Ngày muốn đặt</label>
-                    <input class="fb-input" id="date" name="date" value="@DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).AddDays(1).DateTime).ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy" />
-                </div>
-                <button class="fb-button fb-button-primary w-full" type="submit">Đặt sân ngay</button>
-            </form>
-        </section>
-    </aside>
+    <aside class="min-w-0 lg:sticky lg:top-24" id="dat-san"><section class="fb4-surface p-6"><p class="fb4-kicker">Đặt sân trực tuyến</p><h2 class="mt-2 text-xl font-bold">Sẵn sàng ra sân?</h2><p class="mt-2 text-sm leading-6 text-muted">Chọn ngày để xem các khung giờ trống và tổng giá.</p>
+        <form class="mt-6 space-y-4" action="/booking" method="get"><input type="hidden" name="fieldId" value="@Model.Field.Id" /><div><label class="fb-label" for="field-date">Ngày chơi</label><input class="fb-input w-full" id="field-date" name="date" value="@DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).AddDays(1).DateTime).ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy" inputmode="numeric" required /></div><button class="fb-button fb-button-primary w-full" type="submit">Xem giờ trống &amp; đặt sân</button></form>
+        <dl class="mt-6 space-y-3 border-t border-line pt-5 text-sm"><div class="flex justify-between gap-3"><dt class="text-muted">Loại sân</dt><dd class="font-semibold">@Model.Field.FieldType</dd></div><div class="flex justify-between gap-3"><dt class="text-muted">Thời lượng tối thiểu</dt><dd class="font-semibold">@Model.Field.MinimumBookingMinutes phút</dd></div><div class="flex justify-between gap-3"><dt class="text-muted">Bước khung giờ</dt><dd class="font-semibold">@Model.Field.SlotStepMinutes phút</dd></div></dl>
+    </section></aside>
 </section>
