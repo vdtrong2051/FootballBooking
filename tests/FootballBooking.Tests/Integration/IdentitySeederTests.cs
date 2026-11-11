@@ -2,7 +2,6 @@ using FootballBooking.Application.Common.Security;
 using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -14,12 +13,9 @@ public sealed class IdentitySeederTests
     [Fact]
     public async Task SeedDevelopmentOwnerAsync_WhenConfigured_CreatesRolesAndOwner()
     {
-        using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddDbContext<ApplicationDbContext>(options => options.UseMySQL(MySqlTestDatabase.ConnectionString));
         services
             .AddIdentity<ApplicationUser, IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -36,6 +32,7 @@ public sealed class IdentitySeederTests
         await using var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
         var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();

@@ -78,7 +78,7 @@ public sealed class BookingServiceTests
     }
 
     [Fact]
-    public async Task ListCustomerBookingsAsync_WhenMatchingUserIdOrPhone_ReturnsCustomerBookings()
+    public async Task ListCustomerBookingsAsync_WhenOnlyPhoneMatches_DoesNotReturnOtherUsersBookings()
     {
         var field = CreateField();
         var store = new InMemoryBookingStore(field);
@@ -88,8 +88,7 @@ public sealed class BookingServiceTests
 
         var bookings = await service.ListCustomerBookingsAsync(customerId, "0902 345 678");
 
-        var item = Assert.Single(bookings);
-        Assert.Equal("Trần Quốc Huy", item.CustomerName);
+        Assert.Empty(bookings);
     }
 
     [Fact]
@@ -323,6 +322,40 @@ public sealed class BookingServiceTests
         Assert.Contains("Phần trăm giảm không được vượt quá 100%.", result.Errors);
     }
 
+    [Fact]
+    public async Task RecordPaymentAsync_WhenHoldExpired_RejectsAndExpiresBooking()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var booking = new Booking(Guid.NewGuid(), "FB-260726-EXPIRED", field.Id,
+            new DateOnly(2026, 7, 26), 1080, 1140, "Test", "0901234567", "0901234567",
+            null, null, null, BookingSource.GuestWeb, BookingStatus.PendingPayment,
+            PaymentStatus.Unpaid, 250000, 0, 0, 250000,
+            new FixedClock().UtcNow.AddMinutes(-1), new FixedClock().UtcNow.AddMinutes(-20), null);
+        store.Bookings.Add(booking);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+        var result = await service.RecordPaymentAsync(new BookingPaymentCommand(booking.Id,
+            PaymentRecordType.Payment, PaymentMethod.BankTransfer, 100000, "LATE", null, null));
+        Assert.False(result.Succeeded);
+        Assert.Equal(BookingStatus.Expired, booking.Status);
+        Assert.Empty(booking.Payments);
+    }
+
+    [Fact]
+    public async Task RecordPaymentAsync_WhenTransactionReferenceRepeated_RejectsDuplicate()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var booking = CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed);
+        store.Bookings.Add(booking);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+        var command = new BookingPaymentCommand(booking.Id, PaymentRecordType.Payment,
+            PaymentMethod.BankTransfer, 100000, "UNIQUE-REF", null, null);
+        Assert.True((await service.RecordPaymentAsync(command)).Succeeded);
+        Assert.False((await service.RecordPaymentAsync(command)).Succeeded);
+        Assert.Single(booking.Payments);
+    }
+
     private static BookingCreateCommand ValidGuestCommand()
         => new(
             FieldId: Guid.Empty,
@@ -372,7 +405,7 @@ public sealed class BookingServiceTests
             0,
             0,
             250000,
-            null,
+            status == BookingStatus.PendingPayment ? new FixedClock().UtcNow.AddMinutes(10) : null,
             new FixedClock().UtcNow,
             null);
 
@@ -438,8 +471,7 @@ public sealed class BookingServiceTests
 
         public Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhoneNormalized, CancellationToken cancellationToken)
             => Task.FromResult<IReadOnlyList<BookingSummaryDto>>(Bookings
-                .Where(booking => booking.CustomerUserId == customerUserId
-                    || (!string.IsNullOrWhiteSpace(customerPhoneNormalized) && booking.CustomerPhoneNormalized == customerPhoneNormalized))
+                .Where(booking => booking.CustomerUserId == customerUserId)
                 .Select(ToSummary)
                 .ToArray());
 

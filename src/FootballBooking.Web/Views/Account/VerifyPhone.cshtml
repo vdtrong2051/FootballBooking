@@ -1,0 +1,30 @@
+@model PhoneVerificationViewModel
+@{
+    ViewData["Title"] = "Xác thực số điện thoại";
+}
+<section class="fb-container py-10">
+  <div class="mx-auto max-w-md fb-card p-6">
+    <p class="text-xs font-semibold uppercase tracking-wider text-brand-800">XÁC THỰC TÀI KHOẢN</p>
+    <h1 class="mt-2 text-2xl font-semibold text-ink">Nhập mã OTP</h1>
+    <p class="mt-2 text-sm text-muted">Mã gồm 6 chữ số đã gửi tới @Model.MaskedPhone. Mã có hiệu lực 5 phút.</p>
+    <form method="post" action="/account/verify-phone" class="mt-5 space-y-4">
+      @Html.AntiForgeryToken()
+      <input type="hidden" asp-for="UserId" />
+      <input type="hidden" asp-for="ReturnUrl" />
+      <div asp-validation-summary="ModelOnly" class="text-red-700 text-sm"></div>
+      <div>
+        <label class="fb-label" asp-for="Code">Mã xác thực</label>
+        <input class="fb-input" asp-for="Code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" />
+        <span class="text-xs text-red-700" asp-validation-for="Code"></span>
+      </div>
+      <button class="fb-button fb-button-primary w-full justify-center" type="submit">Xác thực tài khoản</button>
+    </form>
+    <form class="mt-4" method="post" action="/account/resend-phone-otp">
+      @Html.AntiForgeryToken()
+      <input type="hidden" name="userId" value="@Model.UserId" />
+      <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+      <button class="fb-button fb-button-secondary w-full justify-center" type="submit">Gửi lại mã (sau 60 giây)</button>
+    </form>
+  </div>
+</section>
+<partial name="_ValidationScriptsPartial" />

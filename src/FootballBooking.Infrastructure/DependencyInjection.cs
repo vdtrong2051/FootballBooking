@@ -26,7 +26,6 @@ public static class DependencyInjection
             .GetSection(DatabaseOptions.SectionName)
             .Get<DatabaseOptions>() ?? new DatabaseOptions();
         var connectionString = MySqlDatabaseConfiguration.GetConnectionString(configuration);
-        var isSqlite = MySqlDatabaseConfiguration.IsSqlite(connectionString, databaseOptions);
 
         var dbOptionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         MySqlDatabaseConfiguration.Configure(dbOptionsBuilder, connectionString, databaseOptions);
@@ -48,15 +47,9 @@ public static class DependencyInjection
         services.AddScoped<IdentitySeeder>();
 
         services.AddSingleton<ISystemClock, SystemClock>();
-        services.AddSingleton<SqliteBookingWriteLock>();
-        services.AddSingleton<IBookingWriteLock>(sp =>
-        {
-            var options = sp.GetService<DbContextOptions<ApplicationDbContext>>();
-            var usesSqlite = isSqlite || (options?.Extensions.Any(ext => ext.GetType().Name.Contains("Sqlite", StringComparison.OrdinalIgnoreCase)) ?? false);
-            return usesSqlite
-                ? sp.GetRequiredService<SqliteBookingWriteLock>()
-                : new MySqlBookingWriteLock(connectionString);
-        });
+        services.AddSingleton<IBookingWriteLock>(_ => new MySqlBookingWriteLock(connectionString));
+        services.AddHttpClient<IPhoneSmsSender, PhoneSmsSender>();
+        services.AddScoped<PhoneOtpService>();
 
         services.AddScoped<IFieldStore, EfFieldStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();

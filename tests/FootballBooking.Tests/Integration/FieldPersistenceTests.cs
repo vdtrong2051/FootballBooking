@@ -5,7 +5,6 @@ using FootballBooking.Infrastructure;
 using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Fields;
 using FootballBooking.Infrastructure.SeedData;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,15 +16,7 @@ public sealed class FieldPersistenceTests
     [Fact]
     public async Task DevelopmentFieldSeeder_WhenRunTwice_CreatesThreeFieldsOnlyOnce()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        await using var dbContext = new ApplicationDbContext(options);
-        await dbContext.Database.EnsureCreatedAsync();
+        await using var dbContext = await MySqlTestDatabase.CreateCleanContextAsync();
 
         var seeder = new DevelopmentFieldSeeder(dbContext, new FixedClock());
 
@@ -40,15 +31,7 @@ public sealed class FieldPersistenceTests
     [Fact]
     public async Task EfFieldStore_ListPublicFields_ReturnsSeededVietnameseFields()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        await using var dbContext = new ApplicationDbContext(options);
-        await dbContext.Database.EnsureCreatedAsync();
+        await using var dbContext = await MySqlTestDatabase.CreateCleanContextAsync();
         await new DevelopmentFieldSeeder(dbContext, new FixedClock()).SeedAsync();
 
         IFieldStore store = new EfFieldStore(dbContext);
@@ -62,15 +45,7 @@ public sealed class FieldPersistenceTests
     [Fact]
     public async Task DevelopmentCommerceSeeder_WhenRunTwice_CreatesVietnameseServicesAndPromotionsOnce()
     {
-        await using var connection = new SqliteConnection("DataSource=:memory:");
-        await connection.OpenAsync();
-
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseSqlite(connection)
-            .Options;
-
-        await using var dbContext = new ApplicationDbContext(options);
-        await dbContext.Database.EnsureCreatedAsync();
+        await using var dbContext = await MySqlTestDatabase.CreateCleanContextAsync();
 
         var seeder = new DevelopmentCommerceSeeder(dbContext, new FixedClock());
 
@@ -84,13 +59,14 @@ public sealed class FieldPersistenceTests
     }
 
     [Fact]
-    public async Task AddInfrastructure_WhenConfiguredWithSqliteProvider_UsesSqliteAndAcquiresWriteLock()
+    public async Task AddInfrastructure_WhenConfiguredWithMySql_UsesMySqlWriteLock()
     {
+        await MySqlTestDatabase.EnsureDatabaseExistsAsync();
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = "Data Source=:memory:",
-                ["Database:Provider"] = "Sqlite"
+                ["ConnectionStrings:DefaultConnection"] = MySqlTestDatabase.ConnectionString,
+                ["Database:ServerVersion"] = "8.0.46"
             })
             .Build();
 

@@ -6,7 +6,7 @@ namespace FootballBooking.Infrastructure.Data;
 public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
 {
     private const string DefaultDevelopmentConnectionString =
-        "Server=localhost;Port=3306;Database=football_booking;User=footballbooking;Password=footballbooking;SslMode=Preferred;AllowPublicKeyRetrieval=True";
+        "Server=localhost;Port=3306;Database=football_booking;User=footballbooking;Password=footballbooking;SslMode=Preferred";
 
     public ApplicationDbContext CreateDbContext(string[] args)
     {

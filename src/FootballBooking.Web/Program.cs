@@ -6,6 +6,8 @@ using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.Identity;
 using FootballBooking.Infrastructure.SeedData;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 var shouldSeedDevelopmentData = args.Any(arg => arg.Equals("--seed-development-data", StringComparison.OrdinalIgnoreCase));
@@ -22,6 +24,20 @@ var bookingPolicy = builder.Configuration
 builder.Services.AddApplication(bookingPolicy);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllersWithViews();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("sensitive-booking", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 12, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+    options.AddPolicy("phone-otp", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 8, Window = TimeSpan.FromMinutes(10), QueueLimit = 0
+        }));
+});
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("InternalUser", policy => policy.RequireRole(ApplicationRoles.Internal));
@@ -82,6 +98,7 @@ if (!app.Environment.IsDevelopment() && hasHttpsRedirectPort)
     app.UseHttpsRedirection();
 }
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

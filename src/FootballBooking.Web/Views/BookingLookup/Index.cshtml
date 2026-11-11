@@ -70,14 +70,17 @@
                     </div>
                 </div>
             }
-            @if (Model.Result.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed)
+            @if (User.Identity?.IsAuthenticated == true
+                && Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var currentUserId)
+                && Model.Result.CustomerUserId == currentUserId
+                && Model.Result.Status is (BookingStatus.PendingPayment or BookingStatus.Confirmed))
             {
                 <form class="mt-5 border-t border-line pt-4" method="post" action="/booking/@Model.Result.BookingCode/cancel">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="customerPhone" value="@Model.CustomerPhone" />
                     <label class="fb-label" for="cancellationReason">Lý do hủy</label>
                     <textarea class="fb-input" id="cancellationReason" name="cancellationReason" rows="3" placeholder="Ví dụ: Đội đổi lịch thi đấu"></textarea>
-                    <button class="fb-button fb-button-danger mt-3" type="submit">Hủy đặt sân</button>
+                    <button class="fb-button fb-button-danger mt-3" type="submit">Yêu cầu hủy đặt sân</button>
                 </form>
             }
         }

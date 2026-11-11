@@ -33,6 +33,11 @@ yarn-error.log*
 # =========================
 # Database dumps và dữ liệu local
 # =========================
+**/App_Data/*.db
+**/App_Data/*.db-shm
+**/App_Data/*.db-wal
+*.sqlite
+*.sqlite3
 *.sql
 *.sql.gz
 

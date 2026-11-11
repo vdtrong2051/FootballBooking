@@ -10,13 +10,7 @@ internal static class MySqlDatabaseConfiguration
     public static string GetConnectionString(IConfiguration configuration)
         => configuration.GetConnectionString(ConnectionStringName)
             ?? throw new InvalidOperationException(
-                $"Thiếu connection string '{ConnectionStringName}'. Hãy cấu hình MySQL/SQLite bằng appsettings, user secrets hoặc biến môi trường.");
-
-    public static bool IsSqlite(string connectionString, DatabaseOptions databaseOptions)
-        => string.Equals(databaseOptions.Provider, "Sqlite", StringComparison.OrdinalIgnoreCase)
-            || ((connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
-                || connectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase))
-                && !connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase));
+                $"Thiếu connection string '{ConnectionStringName}'. Hãy cấu hình MySQL bằng appsettings, user secrets hoặc biến môi trường.");
 
     public static Version ParseServerVersion(string value)
     {
@@ -36,10 +30,11 @@ internal static class MySqlDatabaseConfiguration
     {
         databaseOptions.Validate();
 
-        if (IsSqlite(connectionString, databaseOptions))
+        if (!connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
+            || connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
+            || connectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase))
         {
-            options.UseSqlite(connectionString);
-            return;
+            throw new InvalidOperationException("GĐ0: chỉ hỗ trợ MySQL; không dùng SQLite connection string.");
         }
 
         _ = ParseServerVersion(databaseOptions.ServerVersion);

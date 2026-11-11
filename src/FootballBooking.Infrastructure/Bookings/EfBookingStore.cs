@@ -107,8 +107,7 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
         var query = dbContext.Bookings
             .AsNoTracking()
             .Include(booking => booking.Field)
-            .Where(booking => booking.CustomerUserId == customerUserId
-                || (!string.IsNullOrWhiteSpace(customerPhoneNormalized) && booking.CustomerPhoneNormalized == customerPhoneNormalized));
+            .Where(booking => booking.CustomerUserId == customerUserId);
 
         var bookings = await query
             .OrderByDescending(booking => booking.BookingDate)
@@ -276,5 +275,6 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
             booking.Payments
                 .OrderByDescending(payment => payment.CreatedAtUtc)
                 .Select(payment => new PaymentRecordDto(payment.Id, payment.PaymentType, payment.Method, payment.Amount, payment.Status, payment.TransactionCode, payment.Note, payment.ProcessedAtUtc, payment.CreatedAtUtc))
-                .ToArray());
+                .ToArray(),
+            booking.CustomerUserId);
 }

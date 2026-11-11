@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FootballBooking.Web.Controllers;
 
 [Route("booking/lookup")]
+[Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("sensitive-booking")]
 public sealed class BookingLookupController(IBookingService bookingService) : Controller
 {
     [HttpGet("")]
@@ -21,6 +22,7 @@ public sealed class BookingLookupController(IBookingService bookingService) : Co
             return View(model);
         }
 
+        Response.Headers.CacheControl = "no-store";
         model.Result = await bookingService.LookupBookingAsync(new BookingLookupQuery(model.BookingCode, model.CustomerPhone), cancellationToken);
         if (model.Result is null)
         {

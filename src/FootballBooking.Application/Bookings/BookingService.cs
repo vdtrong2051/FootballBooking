@@ -343,7 +343,7 @@ public sealed class BookingService(
         => store.GetBookingDetailByCodeAsync(bookingCode.Trim(), cancellationToken);
 
     public Task<IReadOnlyList<BookingSummaryDto>> ListCustomerBookingsAsync(Guid customerUserId, string? customerPhone, CancellationToken cancellationToken = default)
-        => store.ListCustomerBookingsAsync(customerUserId, string.IsNullOrWhiteSpace(customerPhone) ? null : NormalizePhone(customerPhone), cancellationToken);
+        => store.ListCustomerBookingsAsync(customerUserId, null, cancellationToken);
 
     public Task<IReadOnlyList<BookingSummaryDto>> ListAdminBookingsAsync(DateOnly? bookingDate, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken = default)
         => store.ListBookingsAsync(bookingDate, fieldId, status, cancellationToken);
@@ -427,8 +427,27 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(["Không tìm thấy booking."]);
         }
 
-        var previousStatus = booking.Status;
         var now = clock.UtcNow;
+        // Any transition from a hold to Confirmed must share the booking creation lock.
+        await using var confirmationLock = targetStatus == BookingStatus.Confirmed
+            ? await writeLock.TryAcquireAsync(booking.FieldId, booking.BookingDate, LockTimeout, cancellationToken)
+            : null;
+        if (targetStatus == BookingStatus.Confirmed && confirmationLock is null)
+            return BookingCommandResult.Failure(["Sân đang được xử lý. Vui lòng thử lại."]);
+        if (targetStatus == BookingStatus.Confirmed)
+        {
+            booking = await store.GetBookingForUpdateAsync(id, cancellationToken) ?? booking;
+            if (booking.ExpireIfNeeded(now))
+            {
+                await store.SaveChangesAsync(cancellationToken);
+                return BookingCommandResult.Failure(["Booking đã hết hạn giữ sân."]);
+            }
+            var conflicts = await store.ListBookingsForFieldDateAsync(booking.FieldId, booking.BookingDate, cancellationToken);
+            if (conflicts.Any(other => other.Id != booking.Id && other.BlocksAvailability(now)
+                && other.Overlaps(booking.BookingDate, booking.StartMinute, booking.EndMinute)))
+                return BookingCommandResult.Failure(["Khung giờ đã được booking khác giữ hoặc xác nhận."]);
+        }
+        var previousStatus = booking.Status;
         switch (targetStatus)
         {
             case BookingStatus.Confirmed:
@@ -480,12 +499,32 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(["Không tìm thấy booking."]);
         }
 
-        if (booking.Status is BookingStatus.Cancelled or BookingStatus.Expired or BookingStatus.NoShow)
-        {
-            return BookingCommandResult.Failure(["Không thể ghi nhận thanh toán cho booking ở trạng thái hiện tại."]);
-        }
-
+        // Synchronize with CreateBookingAsync using the exact same MySQL named lock.
+        await using var paymentLock = await writeLock.TryAcquireAsync(
+            booking.FieldId, booking.BookingDate, LockTimeout, cancellationToken);
+        if (paymentLock is null)
+            return BookingCommandResult.Failure(["Sân đang được xử lý. Vui lòng thử lại."]);
+        booking = await store.GetBookingForPaymentAsync(command.BookingId, cancellationToken) ?? booking;
         var now = clock.UtcNow;
+        if (booking.ExpireIfNeeded(now))
+        {
+            await store.SaveChangesAsync(cancellationToken);
+            return BookingCommandResult.Failure(["Booking đã hết hạn giữ sân, không thể ghi nhận thanh toán."]);
+        }
+        if (booking.Status is BookingStatus.Cancelled or BookingStatus.Expired or BookingStatus.NoShow)
+            return BookingCommandResult.Failure(["Không thể ghi nhận thanh toán cho booking ở trạng thái hiện tại."]);
+        if (command.PaymentType == PaymentRecordType.Payment && booking.Status == BookingStatus.PendingPayment)
+        {
+            var conflicts = await store.ListBookingsForFieldDateAsync(booking.FieldId, booking.BookingDate, cancellationToken);
+            if (conflicts.Any(other => other.Id != booking.Id && other.BlocksAvailability(now)
+                && other.Overlaps(booking.BookingDate, booking.StartMinute, booking.EndMinute)))
+                return BookingCommandResult.Failure(["Khung giờ đã được booking khác giữ hoặc xác nhận."]);
+        }
+        if (!string.IsNullOrWhiteSpace(command.TransactionCode)
+            && booking.Payments.Any(existing => existing.PaymentType == command.PaymentType
+                && existing.Status == PaymentRecordStatus.Succeeded
+                && existing.TransactionCode == command.TransactionCode))
+            return BookingCommandResult.Failure(["Mã giao dịch này đã được ghi nhận."]);
         var payment = booking.RecordPayment(command.PaymentType, command.Method, command.Amount, PaymentRecordStatus.Succeeded, command.TransactionCode, command.Note, command.RecordedByUserId, now);
         await store.AddPaymentAsync(payment, cancellationToken);
         if (command.PaymentType == PaymentRecordType.Payment && booking.Status == BookingStatus.PendingPayment)

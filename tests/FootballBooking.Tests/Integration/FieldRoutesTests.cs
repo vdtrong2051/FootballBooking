@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -248,6 +247,7 @@ public sealed class FieldRoutesTests
 
         await using var scope = factory.Services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
         await scope.ServiceProvider.GetRequiredService<DevelopmentFieldSeeder>().SeedAsync();
         await scope.ServiceProvider.GetRequiredService<DevelopmentCommerceSeeder>().SeedAsync();
@@ -257,13 +257,9 @@ public sealed class FieldRoutesTests
 
     private sealed class FieldRouteFactory : WebApplicationFactory<Program>
     {
-        private readonly SqliteConnection _connection = new("DataSource=:memory:");
-
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             var contentRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "FootballBooking.Web"));
-
-            _connection.Open();
 
             builder.UseEnvironment("Testing");
             builder.UseContentRoot(contentRoot);
@@ -271,7 +267,13 @@ public sealed class FieldRoutesTests
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
-                services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(_connection));
+                services.RemoveAll<DbContextOptions>();
+                services.AddSingleton(MySqlTestDatabase.Options());
+                services.AddSingleton<DbContextOptions>(sp => sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
+                services.AddDbContext<ApplicationDbContext>();
+                services.RemoveAll<FootballBooking.Application.Bookings.IBookingWriteLock>();
+                services.AddSingleton<FootballBooking.Application.Bookings.IBookingWriteLock>(_ =>
+                    new FootballBooking.Infrastructure.Bookings.MySqlBookingWriteLock(MySqlTestDatabase.ConnectionString));
                 services.RemoveAll<ISystemClock>();
                 services.AddSingleton<ISystemClock, FixedClock>();
 
@@ -281,11 +283,6 @@ public sealed class FieldRoutesTests
             });
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            _connection.Dispose();
-        }
     }
 
     private sealed class FixedClock : ISystemClock

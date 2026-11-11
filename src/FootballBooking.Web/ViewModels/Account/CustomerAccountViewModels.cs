@@ -52,6 +52,17 @@ public sealed class CustomerRegisterViewModel
     public string? ReturnUrl { get; set; }
 }
 
+public sealed class PhoneVerificationViewModel
+{
+    [Required]
+    public Guid UserId { get; set; }
+    [Required(ErrorMessage = "Vui lòng nhập mã OTP.")]
+    [RegularExpression(@"^\d{6}$", ErrorMessage = "OTP phải gồm 6 chữ số.")]
+    public string Code { get; set; } = string.Empty;
+    public string MaskedPhone { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+}
+
 public sealed class CustomerBookingsViewModel
 {
     public string CustomerName { get; set; } = string.Empty;

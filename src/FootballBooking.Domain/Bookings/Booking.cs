@@ -159,6 +159,15 @@ public sealed class Booking
             && startMinute < EndMinute
             && endMinute > StartMinute;
 
+    public bool ExpireIfNeeded(DateTimeOffset utcNow)
+    {
+        if (Status != BookingStatus.PendingPayment || ExpiresAtUtc is null || ExpiresAtUtc > utcNow)
+            return false;
+        Status = BookingStatus.Expired;
+        UpdatedAtUtc = utcNow;
+        return true;
+    }
+
     public void Confirm(DateTimeOffset utcNow)
     {
         if (Status != BookingStatus.PendingPayment)

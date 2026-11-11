@@ -16,7 +16,8 @@ public sealed class AccountController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
     RoleManager<IdentityRole<Guid>> roleManager,
-    IBookingService bookingService) : Controller
+    IBookingService bookingService,
+    PhoneOtpService phoneOtpService) : Controller
 {
     [HttpGet("login")]
     [AllowAnonymous]
@@ -48,8 +49,19 @@ public sealed class AccountController(
 
         if (user is null || user.AccountStatus != AccountStatus.Active)
         {
-            ModelState.AddModelError(string.Empty, "Thông tin đăng nhập không đúng hoặc tài khoản đã tạm khóa.");
+            ModelState.AddModelError(string.Empty, "Thông tin đăng nhập không đúng hoặc tài khoản chưa kích hoạt.");
             return View(model);
+        }
+        if (await userManager.IsInRoleAsync(user, ApplicationRoles.Customer))
+        {
+            var phone = VietnamPhone.Normalize(user.PhoneNumber);
+            var phoneOwner = phone is null ? null : await userManager.FindByLoginAsync("FootballBooking.Phone", phone);
+            if (!user.PhoneNumberConfirmed || phoneOwner?.Id != user.Id)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "Tài khoản cũ chưa có bằng chứng xác thực số điện thoại. Vui lòng liên hệ quản trị viên để xác thực lại.");
+                return View(model);
+            }
         }
 
         var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
@@ -81,6 +93,7 @@ public sealed class AccountController(
 
     [HttpPost("register")]
     [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("phone-otp")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(CustomerRegisterViewModel model, CancellationToken cancellationToken)
     {
@@ -90,7 +103,23 @@ public sealed class AccountController(
         }
 
         var email = model.Email.Trim();
-        var phone = model.PhoneNumber.Trim();
+        var phone = VietnamPhone.Normalize(model.PhoneNumber);
+        if (phone is null)
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại Việt Nam không hợp lệ.");
+            return View(model);
+        }
+        if (await userManager.FindByEmailAsync(email) is not null)
+        {
+            ModelState.AddModelError(nameof(model.Email), "Email đã được đăng ký. Vui lòng đăng nhập.");
+            return View(model);
+        }
+        if (await userManager.FindByLoginAsync("FootballBooking.Phone", phone) is not null
+            || await userManager.Users.AnyAsync(u => u.PhoneNumber == phone, cancellationToken))
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại đã được đăng ký.");
+            return View(model);
+        }
 
         if (!await roleManager.RoleExistsAsync(ApplicationRoles.Customer))
         {
@@ -104,9 +133,9 @@ public sealed class AccountController(
             Email = email,
             PhoneNumber = phone,
             FullName = model.FullName.Trim(),
-            EmailConfirmed = true,
-            PhoneNumberConfirmed = true,
-            AccountStatus = AccountStatus.Active,
+            EmailConfirmed = false,
+            PhoneNumberConfirmed = false,
+            AccountStatus = AccountStatus.Inactive,
             CreatedAtUtc = DateTimeOffset.UtcNow,
             UpdatedAtUtc = DateTimeOffset.UtcNow
         };
@@ -122,11 +151,74 @@ public sealed class AccountController(
             return View(model);
         }
 
-        await userManager.AddToRoleAsync(user, ApplicationRoles.Customer);
-        await signInManager.SignInAsync(user, isPersistent: false);
+        // Uses AspNetUserLogins' existing UNIQUE(LoginProvider, ProviderKey) index.
+        // This reserves the normalized phone without adding a schema migration.
+        var reserved = await userManager.AddLoginAsync(user,
+            new UserLoginInfo("FootballBooking.Phone", phone, "Phone reservation"));
+        if (!reserved.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại đã được đăng ký.");
+            return View(model);
+        }
+        var roleResult = await userManager.AddToRoleAsync(user, ApplicationRoles.Customer);
+        if (!roleResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            ModelState.AddModelError(string.Empty, "Không thể tạo tài khoản lúc này.");
+            return View(model);
+        }
+        var sent = await phoneOtpService.SendAsync(user, cancellationToken);
+        if (!sent.Success) TempData["ErrorMessage"] = sent.Error;
+        return RedirectToAction(nameof(VerifyPhone), new { userId = user.Id, returnUrl = model.ReturnUrl });
+    }
 
-        TempData["SuccessMessage"] = "Đăng ký tài khoản thành công!";
+    [HttpGet("verify-phone")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyPhone(Guid userId, string? returnUrl = null)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || user.PhoneNumberConfirmed || user.AccountStatus != AccountStatus.Inactive)
+            return NotFound();
+        return View(new PhoneVerificationViewModel { UserId = userId, ReturnUrl = returnUrl,
+            MaskedPhone = "******" + (user.PhoneNumber?.Length >= 4 ? user.PhoneNumber[^4..] : "") });
+    }
+
+    [HttpPost("verify-phone")]
+    [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("phone-otp")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyPhone(PhoneVerificationViewModel model)
+    {
+        var user = await userManager.FindByIdAsync(model.UserId.ToString());
+        if (user is null || user.PhoneNumberConfirmed || user.AccountStatus != AccountStatus.Inactive)
+            return NotFound();
+        model.MaskedPhone = "******" + (user.PhoneNumber?.Length >= 4 ? user.PhoneNumber[^4..] : "");
+        if (!ModelState.IsValid) return View(model);
+        var result = await phoneOtpService.VerifyAsync(user, model.Code);
+        if (!result.Success)
+        {
+            ModelState.AddModelError(nameof(model.Code), result.Error);
+            return View(model);
+        }
+        await signInManager.SignInAsync(user, isPersistent: false);
+        TempData["SuccessMessage"] = "Số điện thoại đã được xác thực. Tài khoản đã kích hoạt.";
         return RedirectToLocal(model.ReturnUrl);
+    }
+
+    [HttpPost("resend-phone-otp")]
+    [AllowAnonymous]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("phone-otp")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendPhoneOtp(Guid userId, string? returnUrl, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null || user.PhoneNumberConfirmed || user.AccountStatus != AccountStatus.Inactive)
+            return NotFound();
+        var result = await phoneOtpService.SendAsync(user, cancellationToken);
+        TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Success
+            ? "Đã gửi lại mã xác thực." : result.Error;
+        return RedirectToAction(nameof(VerifyPhone), new { userId, returnUrl });
     }
 
     [HttpPost("logout")]
@@ -150,7 +242,16 @@ public sealed class AccountController(
         }
 
         var user = await userManager.FindByIdAsync(userId.ToString());
-        var bookings = await bookingService.ListCustomerBookingsAsync(userId, user?.PhoneNumber, cancellationToken);
+        if (user is null) return Unauthorized();
+        if (await userManager.IsInRoleAsync(user, ApplicationRoles.Customer))
+        {
+            var phone = VietnamPhone.Normalize(user.PhoneNumber);
+            var phoneOwner = phone is null ? null : await userManager.FindByLoginAsync("FootballBooking.Phone", phone);
+            if (!user.PhoneNumberConfirmed || phoneOwner?.Id != user.Id)
+                return Forbid();
+        }
+        // Account history is linked ONLY by verified identity, not by a matching phone.
+        var bookings = await bookingService.ListCustomerBookingsAsync(userId, null, cancellationToken);
 
         return View(new CustomerBookingsViewModel
         {

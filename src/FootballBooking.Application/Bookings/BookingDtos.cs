@@ -117,7 +117,8 @@ public sealed record BookingDetailDto(
     DateTimeOffset CreatedAtUtc,
     IReadOnlyList<PricingSegmentDto> PriceSegments,
     IReadOnlyList<BookingServiceLineDto> ServiceLines,
-    IReadOnlyList<PaymentRecordDto> Payments)
+    IReadOnlyList<PaymentRecordDto> Payments,
+    Guid? CustomerUserId = null)
 {
     public long RemainingAmount => Math.Max(0, TotalAmount - PaidAmount + RefundedAmount);
 
