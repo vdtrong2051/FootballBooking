@@ -9,8 +9,8 @@
     private static string Money(long amount) => $"{amount:N0} ₫";
     private static string Clock(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
-<section class="fb-account-section">
-    <p class="fb-account-kicker">Booking Management</p>
+<section class="fb4b-bookings-panel fb-account-section">
+    <p class="fb-account-kicker">Quản lý lịch đặt</p>
     <h2 class="fb-account-section-title mt-1">Lịch đặt sân</h2>
     <p class="mt-2 text-sm text-muted">Chỉ hiển thị booking thuộc tài khoản đã xác minh của bạn. Booking vãng lai cần tra cứu riêng.</p>
     @if (Model.Bookings.Count > 0)
@@ -40,7 +40,7 @@
                     : "upcoming";
                 var repeatDate = booking.BookingDate > today ? booking.BookingDate : today.AddDays(1);
                 var dateValue = System.Net.WebUtility.UrlEncode(repeatDate.ToString("dd/MM/yyyy"));
-                <article class="py-5" data-booking-row data-booking-group="@group" data-booking-search="@($"{booking.BookingCode} {booking.FieldName}")">
+                <article class="fb4b-booking-item py-5" data-booking-row data-booking-group="@group" data-booking-search="@($"{booking.BookingCode} {booking.FieldName}")">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-ink">@booking.FieldName</span><partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.Status(booking.Status), BookingLabels.StatusTone(booking.Status))' /></div>

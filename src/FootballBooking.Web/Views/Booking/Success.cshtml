@@ -1,6 +1,6 @@
 @model BookingSuccessViewModel
 @{
-    ViewData["Title"] = "Đặt sân thành công";
+    ViewData["Title"] = "Đã nhận yêu cầu đặt sân";
     var selectedMethod = Model.Booking.PreferredPaymentMethod;
 }
 @functions {
@@ -8,10 +8,10 @@
     private static string FormatMinute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
 
-<section class="fb-container py-10">
-    <div class="fb-card p-5">
+<section class="fb4b-success fb-container py-10">
+    <div class="fb4b-success-card fb-card p-5">
         <partial name="Partials/_Alert" model='new AlertViewModel("Đã nhận yêu cầu đặt sân", "Vui lòng lưu mã đặt sân để tra cứu hoặc cung cấp cho nhân viên khi đến sân.", "success", "check-circle")' />
-        <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+        <dl class="fb4b-receipt-grid mt-5 grid gap-3 text-sm sm:grid-cols-2">
             <div><dt class="text-muted">Mã đặt sân</dt><dd class="font-semibold text-ink">@Model.Booking.BookingCode</dd></div>
             <div><dt class="text-muted">Sân</dt><dd class="font-semibold text-ink">@Model.Booking.FieldName</dd></div>
             <div><dt class="text-muted">Ngày</dt><dd class="font-semibold text-ink">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</dd></div>

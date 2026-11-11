@@ -1,7 +1,7 @@
 @{
     var current = ViewData["AccountSection"] as string ?? "overview";
 }
-<nav aria-label="Điều hướng tài khoản" class="fb-card overflow-hidden p-2 lg:sticky lg:top-5">
+<nav aria-label="Điều hướng tài khoản" class="fb4b-account-nav fb-card overflow-hidden p-2 lg:sticky lg:top-5">
     <div class="flex gap-1 overflow-x-auto lg:flex-col">
         <a href="/account" aria-current="@(current == "overview" ? "page" : null)" class="fb-account-link @(current == "overview" ? "fb-account-link-active" : "")">
             <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("home", "h-[18px] w-[18px]")' /> Tổng quan

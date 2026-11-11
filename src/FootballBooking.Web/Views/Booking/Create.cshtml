@@ -17,14 +17,14 @@
     private static string Money(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
     private static string Minute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
-<section class="border-b border-line bg-white">
+<section class="fb4b-booking-head border-b border-line bg-white">
     <div class="fb-container py-8">
         <p class="text-xs font-semibold uppercase tracking-wide text-brand-800">Đặt sân trực tuyến</p>
         <h1 class="mt-2 text-3xl font-semibold text-ink">Chọn sân, giờ chơi và xem giá tức thì</h1>
         <p class="mt-3 max-w-2xl text-sm leading-6 text-muted">
             Khung giờ và báo giá được kiểm tra lại trước khi giữ sân. Chỗ chỉ được giữ sau khi xác nhận đặt sân thành công.
         </p>
-        <div class="mt-5 grid gap-3 sm:grid-cols-3" aria-label="Các bước đặt sân">
+        <div class="fb4b-stepper mt-5 grid gap-3 sm:grid-cols-3" aria-label="Các bước đặt sân">
             <div class="rounded-ui border border-brand-200 bg-brand-50 px-4 py-3"><span class="text-xs font-semibold text-brand-800">01</span><p class="mt-1 text-sm font-semibold text-ink">Sân, ngày, thời lượng</p></div>
             <div class="rounded-ui border border-line bg-white px-4 py-3"><span class="text-xs font-semibold text-muted">02</span><p class="mt-1 text-sm font-semibold text-ink">Dịch vụ và thông tin</p></div>
             <div class="rounded-ui border border-line bg-white px-4 py-3"><span class="text-xs font-semibold text-muted">03</span><p class="mt-1 text-sm font-semibold text-ink">Xác nhận &amp; giữ sân</p></div>
@@ -32,8 +32,8 @@
     </div>
 </section>
 
-<section class="fb-container grid min-w-0 gap-5 py-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(290px,0.65fr)] lg:items-start">
-    <form id="gd1-booking-form" class="fb-card min-w-0 p-4 sm:p-6" method="post" asp-action="Create">
+<section class="fb4b-booking-shell fb-container grid min-w-0 gap-5 py-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(290px,0.65fr)] lg:items-start">
+    <form id="gd1-booking-form" class="fb4b-booking-form fb-card min-w-0 p-4 sm:p-6" method="post" asp-action="Create">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="mb-4 rounded-ui border border-red-200 bg-red-50 p-3 text-sm text-red-800"></div>
         <h2 class="text-lg font-semibold text-ink">1. Chọn sân và giờ chơi</h2>
@@ -70,10 +70,10 @@
             <p id="gd1-slot-status" class="mt-3 text-sm text-muted" role="status" aria-live="polite">
                 @(Model.Slots.Count == 0 ? "Không có giờ khả dụng cho lựa chọn này." : "Các khung giờ màu xanh có thể chọn; khung giờ xám đã kín hoặc chưa hợp lệ.")
             </p>
-            <div id="gd1-slots" class="mt-3 grid max-h-80 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3" aria-label="Danh sách giờ bắt đầu">
+            <div id="gd1-slots" class="fb4b-slot-grid mt-3 grid max-h-80 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3" aria-label="Danh sách giờ bắt đầu">
                 @foreach (var slot in Model.Slots)
                 {
-                    <label class="flex min-w-0 items-center gap-2 rounded-ui border px-3 py-2 text-xs font-medium @(slot.IsAvailable ? "cursor-pointer border-green-200 bg-green-50 text-green-900" : "cursor-not-allowed border-slate-200 bg-slate-50 text-muted")">
+                    <label class="fb4b-slot flex min-w-0 items-center gap-2 rounded-ui border px-3 py-2 text-xs font-medium @(slot.IsAvailable ? "cursor-pointer border-green-200 bg-green-50 text-green-900" : "cursor-not-allowed border-slate-200 bg-slate-50 text-muted")">
                         <input type="radio" name="StartMinute" value="@slot.StartMinute" checked="@(Model.StartMinute == slot.StartMinute && slot.IsAvailable)" disabled="@(!slot.IsAvailable)" class="h-4 w-4 shrink-0 accent-green-700" aria-label="@slot.Label @(slot.IsAvailable ? "" : slot.UnavailableReason)" />
                         <span>@Minute(slot.StartMinute)</span>
                         <span class="sr-only">đến @Minute(slot.EndMinute)</span>
@@ -88,7 +88,7 @@
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 @for (var i = 0; i < Model.Services.Count; i++)
                 {
-                    <div class="rounded-ui border border-line p-3">
+                    <div class="fb4b-service-item rounded-ui border border-line p-3">
                         <input type="hidden" asp-for="Services[i].ServiceId" />
                         <input type="hidden" asp-for="Services[i].Name" />
                         <input type="hidden" asp-for="Services[i].UnitName" />
@@ -132,11 +132,11 @@
 
         <div class="mt-7 border-t border-line pt-6">
             <h2 class="text-lg font-semibold text-ink">3. Phương thức thanh toán dự kiến</h2>
-            <p class="mt-1 text-xs text-muted">Đây chỉ là lựa chọn để ghi nhận nhu cầu. Tích hợp xác nhận giao dịch và QR được triển khai ở GĐ2.</p>
+            <p class="mt-1 text-xs text-muted">Đây là phương thức dự kiến. Sau khi giữ sân thành công, bạn sẽ nhận hướng dẫn thanh toán; việc hiển thị QR không xác nhận tiền đã được nhận.</p>
             <div class="mt-3 grid gap-2 sm:grid-cols-2">
                 @foreach (var option in paymentOptions)
                 {
-                    <label class="flex cursor-pointer items-start gap-2 rounded-ui border border-line p-3 hover:border-brand-700">
+                    <label class="fb4b-payment-choice flex cursor-pointer items-start gap-2 rounded-ui border border-line p-3 hover:border-brand-700">
                         <input type="radio" asp-for="PreferredPaymentMethod" value="@option.Method" class="mt-1 shrink-0 accent-green-700" />
                         <span class="min-w-0"><span class="block text-sm font-semibold text-ink">@option.Title</span><span class="block text-xs text-muted">@option.Subtitle</span></span>
                     </label>
@@ -150,13 +150,13 @@
                 <strong id="gd1-mobile-total" class="text-base font-semibold text-brand-900">@Money(previewValid ? preview!.TotalAmount : 0)</strong>
             </div>
             <p class="mb-4 text-sm text-muted">Hệ thống giữ sân trong 10 phút sau khi xác nhận thành công. Chọn giờ không tự giữ sân.</p>
-            <button id="gd1-submit" class="fb-button fb-button-primary w-full justify-center sm:w-auto" type="submit" disabled="@(!previewValid)">
+            <button id="gd1-submit" class="fb4b-submit-button fb-button fb-button-primary w-full justify-center sm:w-auto" type="submit" disabled="@(!previewValid)">
                 Xác nhận đặt sân
             </button>
         </div>
     </form>
 
-    <aside class="min-w-0 lg:sticky lg:top-24" aria-label="Tóm tắt đặt sân">
+    <aside class="fb4b-quote-aside min-w-0 lg:sticky lg:top-24" aria-label="Tóm tắt đặt sân">
         <section class="fb-card p-4 sm:p-5">
             <h2 class="text-lg font-semibold text-ink">Tóm tắt và báo giá</h2>
             <div class="mt-4 space-y-2 text-sm">

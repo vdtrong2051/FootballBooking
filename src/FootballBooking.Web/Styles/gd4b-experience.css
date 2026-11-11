@@ -1,0 +1,104 @@
+/* FootballBooking GĐ4-B: booking, checkout and account experience.
+   All styles are scoped; no @apply or `group` utility appears in this file. */
+@layer components {
+  .fb4b-booking-head {
+    background: radial-gradient(circle at 90% 0%, rgba(34,197,94,.12), transparent 36%),
+                linear-gradient(180deg,#fff 0%,#f4faf6 100%);
+  }
+  .fb4b-booking-head .fb-container { padding-top: 2.75rem; padding-bottom: 2.25rem; }
+  .fb4b-booking-head h1 { max-width: 45rem; font-size: clamp(1.9rem,3.4vw,2.65rem); letter-spacing: -.04em; line-height: 1.15; }
+  .fb4b-booking-head .fb-container > p:nth-of-type(2) { max-width: 48rem; }
+  .fb4b-stepper > div { min-width:0; min-height: 5.2rem; border-radius: 1rem; border: 1px solid #e2e9e4; background: rgba(255,255,255,.9); padding: 1rem; box-shadow: 0 4px 16px rgba(15,35,23,.035); }
+  .fb4b-stepper > div:first-child { background: #eaf9ef; border-color: #9cdbb3; box-shadow: inset 3px 0 0 #16803d; }
+  .fb4b-stepper p { line-height: 1.35; }
+  .fb4b-booking-shell { gap: 1.5rem; align-items: start; }
+  .fb4b-booking-form, .fb4b-quote-aside .fb-card, .fb4b-success-card,
+  .fb4b-checkout .fb-card {
+    min-width: 0; border-radius: 1.25rem; border-color: #e2e9e4;
+    box-shadow: 0 12px 38px rgba(12,40,25,.055);
+  }
+  .fb4b-booking-form > h2, .fb4b-booking-form > div > h2 { letter-spacing:-.025em; }
+  .fb4b-booking-form .fb-input, .fb4b-auth-page .fb-input,
+  .fb4b-account-page .fb-input { min-height:2.75rem; border-radius:.75rem; }
+  .fb4b-slot-grid { padding: .25rem; gap: .6rem; }
+  .fb4b-slot-grid .fb4b-slot { min-width:0; min-height:3.2rem; border-radius:.8rem;
+    transition: background .18s ease,border-color .18s ease,box-shadow .18s ease; }
+  .fb4b-slot:has(input:checked) { background:#e9f9ef !important; border-color:#16803d !important;
+    color:#0f5132 !important; box-shadow:0 0 0 2px rgba(22,128,61,.12); }
+  .fb4b-slot:has(input:disabled) { opacity:.56; }
+  .fb4b-slot:not(:has(input:disabled)):hover { border-color:#16803d; }
+  .fb4b-service-item { border-radius: .9rem; padding: 1rem; background:#fcfdfc;
+    transition:border-color .18s ease; }
+  .fb4b-service-item:focus-within { border-color:#16803d; }
+  .fb4b-service-item input[type=number] { min-height:2.75rem; }
+  .fb4b-payment-choice { min-width:0; min-height:4.1rem; border-radius:.85rem;
+    background:#fbfcfb; transition:background .18s ease,border-color .18s ease; }
+  .fb4b-payment-choice:has(input:checked) { border-color:#16803d; background:#eaf9ef;
+    box-shadow:inset 0 0 0 1px rgba(22,128,61,.18); }
+  .fb4b-payment-choice:hover { background:#f1faf4; }
+  .fb4b-quote-aside { align-self: start; }
+  .fb4b-quote-aside .fb-card { overflow:hidden; border-top:4px solid #16803d; }
+  .fb4b-quote-aside #gd1-price-total { font-size:1.35rem; font-weight:800; white-space:nowrap; }
+  .fb4b-booking-form #gd1-price-segments { font-variant-numeric:tabular-nums; }
+  .fb4b-submit-button { min-height:3.1rem; padding-inline:1.75rem; border-radius:.8rem; }
+  .fb4b-success { max-width: 68rem; }
+  .fb4b-success-card { padding:clamp(1.25rem,3vw,2.1rem); }
+  .fb4b-receipt-grid { gap:0; border:1px solid #e6ece8; border-radius:1rem; overflow:hidden; }
+  .fb4b-receipt-grid > div { display:flex; justify-content:space-between; gap:1rem; padding:.9rem 1rem;
+    border-bottom:1px solid #e6ece8; min-width:0; }
+  .fb4b-receipt-grid > div:nth-child(even) { background:#fafcfb; }
+  .fb4b-receipt-grid dt { color:#64736a; }
+  .fb4b-receipt-grid dd { overflow-wrap:anywhere; text-align:right; }
+  .fb4b-checkout { align-items:start; padding-top:2.5rem; padding-bottom:4rem; }
+  .fb4b-checkout > div, .fb4b-checkout-aside { min-width:0; }
+  .fb4b-checkout .fb-card { padding:clamp(1.1rem,2.8vw,1.7rem); }
+  .fb4b-checkout .fb-card h1 { font-size:clamp(1.5rem,3.1vw,2.15rem); letter-spacing:-.035em; }
+  .fb4b-checkout .fb-card h2 { font-size:1.1rem; font-weight:750; letter-spacing:-.02em; }
+  .fb4b-method-grid > form { min-width:0; }
+  .fb4b-method-button { min-height:3.7rem; border-radius:.95rem; white-space:normal;
+    background:#f8fcfa; border:1px solid #dce8e0; padding:.8rem 1rem;
+    transition:border-color .18s ease, background .18s ease, transform .18s ease; }
+  .fb4b-method-button:not(:disabled):hover { border-color:#16803d; background:#ecf9f0; transform:translateY(-1px); }
+  .fb4b-qr-image { width:min(100%,22rem); height:auto; margin-inline:auto; padding:.7rem;
+    border-radius:1.1rem; background:white; box-shadow:0 12px 30px rgba(15,35,23,.07); }
+  .fb4b-checkout-aside { position:relative; }
+  .fb4b-checkout-aside .fb-card { border-top:4px solid #16803d; }
+  .fb4b-checkout-aside dd { text-align:right; overflow-wrap:anywhere; }
+  .fb4b-account-page { background:linear-gradient(160deg,#f3f9f5 0%,#f7f8f6 36%,#f7f8f6 100%); }
+  .fb4b-account-header { padding:1.2rem 1.35rem; border-radius:1.15rem;
+    border:1px solid #e2eae4; background:white; box-shadow:0 5px 20px rgba(16,47,27,.045); }
+  .fb4b-account-header h1 { font-size:clamp(1.65rem,2.5vw,2.1rem); letter-spacing:-.035em; }
+  .fb4b-account-grid { align-items:start; }
+  .fb4b-account-nav { border-radius:1.1rem; border:1px solid #e0e9e2; box-shadow:0 8px 28px rgba(16,47,27,.05); }
+  .fb4b-account-nav a[aria-current=page] { background:#e7f7ed; color:#125b32; box-shadow:inset 3px 0 0 #16803d; }
+  .fb4b-account-content > .fb-account-section, .fb4b-account-content > form.fb-account-section,
+  .fb4b-account-content > section.fb-account-section { border:1px solid #e1e9e3;
+    border-radius:1.15rem; box-shadow:0 9px 30px rgba(16,47,27,.045); }
+  .fb4b-account-content .fb-account-section-title { font-size:1.3rem; letter-spacing:-.025em; }
+  .fb4b-account-content .fb-account-kicker { letter-spacing:.14em; }
+  .fb4b-account-content .fb-button { border-radius:.7rem; }
+  .fb4b-booking-item { padding-inline:.35rem; transition:background .18s ease; }
+  .fb4b-booking-item:hover { background:#fafdfb; }
+  .fb4b-bookings-panel [data-booking-filter] { min-height:2.2rem; }
+  .fb4b-auth-page { min-height:calc(100vh - 19rem); padding-block:clamp(2.5rem,6vw,5rem);
+    background:radial-gradient(circle at 12% 14%,#def7e7,transparent 32%),
+               radial-gradient(circle at 90% 80%,#e6f4e9,transparent 32%); }
+  .fb4b-auth-card { border-radius:1.4rem; border-color:#dfe9e1; padding:clamp(1.5rem,4vw,2.25rem);
+    box-shadow:0 20px 55px rgba(16,47,27,.075); }
+  .fb4b-auth-card h1 { font-size:1.85rem; letter-spacing:-.035em; }
+  .fb4b-auth-card .fb-button-primary { min-height:3rem; border-radius:.75rem; }
+}
+@media(min-width:1024px) {
+  .fb4b-quote-aside, .fb4b-checkout-aside { position:sticky; top:6rem; }
+}
+@media(max-width:639px) {
+  .fb4b-receipt-grid { grid-template-columns:1fr; }
+  .fb4b-receipt-grid > div { padding:.85rem; }
+  .fb4b-account-header { padding:1.1rem; }
+  .fb4b-method-grid { gap:.65rem; }
+  .fb4b-checkout { padding-top:1.5rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fb4b-slot,.fb4b-payment-choice,.fb4b-method-button,.fb4b-booking-item { transition:none !important; }
+  .fb4b-method-button:hover { transform:none !important; }
+}
