@@ -15,31 +15,62 @@ public sealed class BookingService(
     private const int HoldMinutes = 10;
     private readonly BookingPolicyOptions _policy = policyOptions ?? new BookingPolicyOptions();
 
-    public async Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityAsync(Guid fieldId, DateOnly bookingDate, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityAsync(Guid fieldId, DateOnly bookingDate, CancellationToken cancellationToken = default)
+        => GetAvailabilityCoreAsync(fieldId, bookingDate, null, cancellationToken);
+
+    public Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityAsync(Guid fieldId, DateOnly bookingDate, int durationMinutes, CancellationToken cancellationToken = default)
+        => GetAvailabilityCoreAsync(fieldId, bookingDate, durationMinutes, cancellationToken);
+
+    private async Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityCoreAsync(Guid fieldId, DateOnly bookingDate, int? requestedDuration, CancellationToken cancellationToken)
     {
         var field = await store.GetFieldForBookingAsync(fieldId, cancellationToken);
-        if (field is null)
-        {
+        if (field is null || field.SlotStepMinutes <= 0)
             return [];
-        }
+
+        var duration = requestedDuration ?? field.MinimumBookingMinutes;
+        if (duration < field.MinimumBookingMinutes || duration > 240 || duration % field.SlotStepMinutes != 0)
+            return [];
+
+        var hour = field.OperatingHours.FirstOrDefault(item => item.DayOfWeek == (int)bookingDate.DayOfWeek);
+        if (hour is null || hour.IsClosed || hour.OpenMinute is null || hour.CloseMinute is null)
+            return [];
 
         var bookings = await store.ListBookingsForFieldDateAsync(fieldId, bookingDate, cancellationToken);
         var slots = new List<BookingSlotDto>();
-
-        var operatingHour = field.OperatingHours.FirstOrDefault(hour => hour.DayOfWeek == (int)bookingDate.DayOfWeek);
-        if (operatingHour is null || operatingHour.IsClosed || operatingHour.OpenMinute is null || operatingHour.CloseMinute is null)
+        for (var start = hour.OpenMinute.Value; start + duration <= hour.CloseMinute.Value; start += field.SlotStepMinutes)
         {
-            return slots;
-        }
-
-        for (var start = operatingHour.OpenMinute.Value; start + field.MinimumBookingMinutes <= operatingHour.CloseMinute.Value; start += field.SlotStepMinutes)
-        {
-            var end = start + field.MinimumBookingMinutes;
+            var end = start + duration;
             var errors = ValidateAvailability(field, bookings, bookingDate, start, end, allowPast: false);
             slots.Add(new BookingSlotDto(start, end, errors.Count == 0, $"{FormatMinute(start)} - {FormatMinute(end)}", errors.FirstOrDefault()));
         }
-
         return slots;
+    }
+
+    public async Task<BookingPricePreviewDto> GetBookingQuoteAsync(BookingQuoteQuery query, CancellationToken cancellationToken = default)
+    {
+        var field = await store.GetFieldForBookingAsync(query.FieldId, cancellationToken);
+        if (field is null)
+            return new BookingPricePreviewDto(false, 0, 0, 0, 0, [], ["Không tìm thấy sân cần đặt."]);
+
+        var bookings = await store.ListBookingsForFieldDateAsync(query.FieldId, query.BookingDate, cancellationToken);
+        var errors = ValidateAvailability(field, bookings, query.BookingDate, query.StartMinute, query.EndMinute, allowPast: false);
+        var price = CalculatePrice(field, query.BookingDate, query.StartMinute, query.EndMinute);
+        if (price is null)
+            errors.Add("Chưa cấu hình giá phù hợp cho khung giờ đã chọn.");
+
+        var command = new BookingCreateCommand(
+            query.FieldId, query.BookingDate, query.StartMinute, query.EndMinute,
+            "Báo giá", query.CustomerPhone ?? string.Empty, null, null,
+            BookingSource.GuestWeb, null, query.Services, query.PromotionCode);
+        var services = await BuildServiceLinesAsync(command, Guid.NewGuid(), cancellationToken);
+        errors.AddRange(services.Errors);
+        var subtotal = (price?.CourtAmount ?? 0) + services.ServiceAmount;
+        var promotion = await CalculatePromotionAsync(command, subtotal, cancellationToken);
+        errors.AddRange(promotion.Errors);
+        return new BookingPricePreviewDto(
+            errors.Count == 0, price?.CourtAmount ?? 0, services.ServiceAmount,
+            promotion.DiscountAmount, Math.Max(0, subtotal - promotion.DiscountAmount),
+            price?.Segments ?? [], errors);
     }
 
     public async Task<PricingQuoteDto?> GetPricingQuoteAsync(Guid fieldId, DateOnly bookingDate, int startMinute, int endMinute, CancellationToken cancellationToken = default)

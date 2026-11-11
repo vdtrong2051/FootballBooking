@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using FootballBooking.Application.Common.Time;
 using FootballBooking.Infrastructure.Data;
 using FootballBooking.Infrastructure.SeedData;
@@ -15,6 +17,66 @@ namespace FootballBooking.Tests.Integration;
 
 public sealed class FieldRoutesTests
 {
+    [Fact]
+    public async Task QuoteApi_WithAntiForgeryToken_ReturnsServerPrice()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        using var client = factory.CreateClient();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var fieldService = scope.ServiceProvider.GetRequiredService<FootballBooking.Application.Fields.IFieldService>();
+        var fieldId = (await fieldService.ListPublicFieldsAsync())[0].Id;
+        var page = await client.GetStringAsync("/booking");
+        var tokenMatch = Regex.Match(page, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
+        Assert.True(tokenMatch.Success, "Booking page must render an antiforgery request token.");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/booking/quote")
+        {
+            Content = JsonContent.Create(new
+            {
+                fieldId,
+                bookingDateText = "26/07/2026",
+                startMinute = 1080,
+                durationMinutes = 60,
+                customerPhone = "0901234567",
+                promotionCode = "",
+                services = Array.Empty<object>()
+            })
+        };
+        request.Headers.Add("RequestVerificationToken", tokenMatch.Groups[1].Value);
+        using var response = await client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"isValid\":true", body);
+    }
+
+    [Fact]
+    public async Task Availability_WhenDuration90_ReturnsLength90AndAvailability()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        using var client = factory.CreateClient();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var service = scope.ServiceProvider.GetRequiredService<FootballBooking.Application.Fields.IFieldService>();
+        var fieldId = (await service.ListPublicFieldsAsync())[0].Id;
+
+        var response = await client.GetAsync($"/fields/{fieldId}/availability?date=26%2F07%2F2026&durationMinutes=90");
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"durationMinutes\":90", html);
+        Assert.Contains("\"endMinute\":450", html); // 06:00 + 90 min
+    }
+
+    [Fact]
+    public async Task HomeBookingForm_UsesRealFieldIdAndRealDate()
+    {
+        await using var factory = await CreateSeededFactoryAsync();
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/");
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("name=\"fieldId\"", html);
+        Assert.Contains("name=\"date\"", html);
+        Assert.DoesNotContain("25/07/2026", html);
+    }
+
     [Fact]
     public async Task PublicFields_WhenSeeded_RendersFieldListAndDetails()
     {

@@ -27,14 +27,26 @@ public sealed class FieldsController(IFieldService fieldService, IBookingService
     }
 
     [HttpGet("/fields/{id:guid}/availability")]
-    public async Task<IActionResult> Availability(Guid id, string date, CancellationToken cancellationToken)
+    public async Task<IActionResult> Availability(Guid id, string date, int? durationMinutes, CancellationToken cancellationToken)
     {
         if (!DateOnly.TryParseExact(date, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var bookingDate))
         {
             return BadRequest(new { message = "Ngày cần theo định dạng dd/MM/yyyy." });
         }
 
-        var slots = await bookingService.GetAvailabilityAsync(id, bookingDate, cancellationToken);
-        return Json(slots);
+        if (durationMinutes is null)
+        {
+            // Preserve the legacy response shape for existing consumers.
+            var existingSlots = await bookingService.GetAvailabilityAsync(id, bookingDate, cancellationToken);
+            Response.Headers.CacheControl = "no-store";
+            return Json(existingSlots);
+        }
+
+        if (durationMinutes is not (60 or 90 or 120))
+            return BadRequest(new { message = "Thời lượng phải là 60, 90 hoặc 120 phút." });
+
+        var slots = await bookingService.GetAvailabilityAsync(id, bookingDate, durationMinutes.Value, cancellationToken);
+        Response.Headers.CacheControl = "no-store";
+        return Json(new { fieldId = id, date = bookingDate.ToString("yyyy-MM-dd"), durationMinutes, slots });
     }
 }

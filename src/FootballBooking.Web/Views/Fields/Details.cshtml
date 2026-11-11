@@ -116,7 +116,7 @@
                 <input type="hidden" name="fieldId" value="@Model.Field.Id" />
                 <div>
                     <label class="fb-label" for="date">Ngày muốn đặt</label>
-                    <input class="fb-input" id="date" name="date" value="@DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)).ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy" />
+                    <input class="fb-input" id="date" name="date" value="@DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).AddDays(1).DateTime).ToString("dd/MM/yyyy")" placeholder="dd/MM/yyyy" />
                 </div>
                 <button class="fb-button fb-button-primary w-full" type="submit">Đặt sân ngay</button>
             </form>

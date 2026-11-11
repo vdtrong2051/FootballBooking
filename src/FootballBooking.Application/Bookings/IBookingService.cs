@@ -5,6 +5,8 @@ namespace FootballBooking.Application.Bookings;
 public interface IBookingService
 {
     Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityAsync(Guid fieldId, DateOnly bookingDate, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<BookingSlotDto>> GetAvailabilityAsync(Guid fieldId, DateOnly bookingDate, int durationMinutes, CancellationToken cancellationToken = default);
+    Task<BookingPricePreviewDto> GetBookingQuoteAsync(BookingQuoteQuery query, CancellationToken cancellationToken = default);
     Task<PricingQuoteDto?> GetPricingQuoteAsync(Guid fieldId, DateOnly bookingDate, int startMinute, int endMinute, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ServiceItemDto>> ListActiveServicesAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ServiceItemDto>> ListAdminServicesAsync(CancellationToken cancellationToken = default);

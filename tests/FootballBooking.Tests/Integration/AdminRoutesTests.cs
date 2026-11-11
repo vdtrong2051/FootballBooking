@@ -1,4 +1,7 @@
 ﻿using System.Net;
+using FootballBooking.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -59,6 +62,7 @@ public sealed class AdminRoutesTests
     [Fact]
     public async Task Home_WhenRequested_ReturnsVietnamesePublicShell()
     {
+        await using var context = await MySqlTestDatabase.CreateCleanContextAsync();
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
 
@@ -95,6 +99,14 @@ public sealed class AdminRoutesTests
                 builder.ConfigureLogging(logging => logging.ClearProviders());
                 builder.ConfigureTestServices(services =>
                 {
+                    services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+                    services.RemoveAll<DbContextOptions>();
+                    services.AddSingleton(MySqlTestDatabase.Options());
+                    services.AddSingleton<DbContextOptions>(sp => sp.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
+                    services.AddDbContext<ApplicationDbContext>();
+                    services.RemoveAll<FootballBooking.Application.Bookings.IBookingWriteLock>();
+                    services.AddSingleton<FootballBooking.Application.Bookings.IBookingWriteLock>(_ =>
+                        new FootballBooking.Infrastructure.Bookings.MySqlBookingWriteLock(MySqlTestDatabase.ConnectionString));
                     var keysPath = Path.Combine(Path.GetTempPath(), "FootballBooking.Tests.DataProtectionKeys");
                     Directory.CreateDirectory(keysPath);
                     services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(keysPath));

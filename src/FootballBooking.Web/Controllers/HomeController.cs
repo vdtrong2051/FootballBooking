@@ -1,14 +1,23 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using FootballBooking.Web.Models;
+using FootballBooking.Application.Bookings;
+using FootballBooking.Application.Fields;
+using FootballBooking.Web.ViewModels.Home;
+using System.Globalization;
 
 namespace FootballBooking.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController(IFieldService fieldService, IBookingService bookingService) : Controller
 {
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        return View();
+        var fields = await fieldService.ListPublicFieldsAsync(cancellationToken);
+        var services = await bookingService.ListActiveServicesAsync(cancellationToken);
+        var promotions = await bookingService.ListActivePromotionsAsync(cancellationToken);
+        var date = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).AddDays(1).DateTime)
+            .ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+        return View(new HomeIndexViewModel(fields, services, promotions, date));
     }
 
     public IActionResult Privacy()

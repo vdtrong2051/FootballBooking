@@ -1,144 +1,127 @@
-﻿@{
+﻿@model FootballBooking.Web.ViewModels.Home.HomeIndexViewModel
+@{
     ViewData["Title"] = "Trang chủ";
-    var fieldCards = new[]
-    {
-        new { Name = "Sân 5A", Type = "Sân 5 người", Price = "250.000 đ/giờ", Status = "Còn giờ 19:30", Tone = "success", Image = "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80" },
-        new { Name = "Sân 5B", Type = "Sân 5 người", Price = "230.000 đ/giờ", Status = "Còn giờ 21:00", Tone = "info", Image = "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=900&q=80" },
-        new { Name = "Sân 7A", Type = "Sân 7 người", Price = "420.000 đ/giờ", Status = "Ít khung giờ", Tone = "warning", Image = "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80" }
-    };
 }
-
+@functions {
+    private static string Money(long? amount) => amount is null ? "Liên hệ" : string.Format("{0:N0} ₫/giờ", amount).Replace(",", ".");
+    private static string MoneyOnly(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
+    private static string Cover(string slug, string? path) => !string.IsNullOrWhiteSpace(path) && !path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+        ? path
+        : slug switch
+        {
+            "san-5b" => "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=900&q=80",
+            "san-7a" => "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=900&q=80",
+            _ => "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80"
+        };
+}
 <section class="border-b border-line bg-white">
-    <div class="fb-container grid gap-8 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-10">
-        <div>
-            <p class="text-sm font-semibold uppercase text-brand-700">Sân bóng mini tại Bình Thạnh</p>
-            <h1 class="mt-3 max-w-3xl text-3xl font-semibold tracking-normal text-ink sm:text-4xl">Đặt sân nhanh, xem giờ trống rõ ràng, không cần tạo tài khoản</h1>
-            <p class="mt-4 max-w-2xl text-base text-muted">Sân bóng An Phú hỗ trợ khách chọn sân, ngày, giờ và dịch vụ đi kèm ngay trên website. Dữ liệu bên dưới là mẫu giao diện phát triển, chưa kết nối nghiệp vụ đặt sân thật.</p>
-            <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-                <a class="fb-button fb-button-primary" href="/booking">
-                    <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("calendar")' />
-                    <span>Đặt sân ngay</span>
-                </a>
-                <a class="fb-button fb-button-secondary" href="/booking/lookup">Tra cứu đặt sân</a>
+    <div class="fb-container grid min-w-0 gap-8 py-9 lg:grid-cols-[1fr_0.95fr] lg:items-center">
+        <div class="min-w-0">
+            <p class="text-sm font-semibold uppercase text-brand-800">Sân bóng An Phú</p>
+            <h1 class="mt-3 text-3xl font-semibold text-ink sm:text-4xl">Đặt sân nhanh, chọn đúng khung giờ trống</h1>
+            <p class="mt-4 max-w-xl text-sm leading-7 text-muted">Chọn sân và ngày, xem giờ còn trống rồi nhận báo giá theo thời lượng và dịch vụ. Không cần tạo tài khoản để đặt sân.</p>
+            <div class="mt-5 flex flex-wrap gap-3">
+                <a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a>
+                <a class="fb-button fb-button-secondary" href="/booking/lookup">Tra cứu mã đặt sân</a>
             </div>
         </div>
-        <div class="overflow-hidden rounded-ui border border-line bg-white shadow-sm">
-            <img class="h-64 w-full object-cover sm:h-80" src="https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=1200&q=80" alt="Sân bóng cỏ nhân tạo vào buổi tối" />
+        <div class="fb-card min-w-0 overflow-hidden">
+            <img class="h-48 w-full object-cover sm:h-56" src="https://images.unsplash.com/photo-1459865264687-595d652de67e?auto=format&fit=crop&w=1200&q=80" alt="Sân bóng cỏ nhân tạo vào buổi tối" />
             <form class="grid gap-4 p-4 sm:grid-cols-2" action="/booking" method="get">
                 <div class="sm:col-span-2">
-                    <label class="fb-label" for="field">Chọn sân</label>
-                    <select class="fb-input" id="field" name="field">
-                        <option>Sân 5A · cỏ nhân tạo</option>
-                        <option>Sân 5B · cỏ nhân tạo</option>
-                        <option>Sân 7A · sân rộng</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="fb-label" for="date">Ngày chơi</label>
-                    <input class="fb-input" id="date" name="date" type="text" value="25/07/2026" />
-                </div>
-                <div>
-                    <label class="fb-label" for="time">Khung giờ</label>
-                    <select class="fb-input" id="time" name="time">
-                        <option>18:00 - 19:30</option>
-                        <option>19:30 - 21:00</option>
-                        <option>21:00 - 22:30</option>
+                    <label class="fb-label" for="home-field">Chọn sân</label>
+                    <select class="fb-input w-full" id="home-field" name="fieldId" required>
+                        @foreach (var field in Model.Fields)
+                        {
+                            <option value="@field.Id">@field.Name · @field.FieldType</option>
+                        }
                     </select>
                 </div>
                 <div class="sm:col-span-2">
-                    <button class="fb-button fb-button-primary w-full" type="submit">Xem khung giờ phù hợp</button>
+                    <label class="fb-label" for="home-date">Ngày muốn chơi (dd/MM/yyyy)</label>
+                    <input class="fb-input w-full" id="home-date" name="date" inputmode="numeric" placeholder="dd/MM/yyyy" value="@Model.DefaultBookingDateText" required />
+                </div>
+                <div class="sm:col-span-2">
+                    <button class="fb-button fb-button-primary w-full justify-center" type="submit" disabled="@(Model.Fields.Count == 0)">Xem giờ trống &amp; đặt sân</button>
                 </div>
             </form>
         </div>
     </div>
 </section>
-
-<section class="fb-container py-8">
-    <div class="grid gap-4 md:grid-cols-3">
-        <article class="overflow-hidden rounded-ui border border-line bg-white shadow-sm">
-            <img class="h-36 w-full object-cover" src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=700&q=80" alt="Cầu thủ thi đấu trên sân bóng mini" />
-            <div class="p-4">
-                <h2 class="font-semibold text-ink">Xem khung giờ còn trống</h2>
-                <p class="mt-1 text-sm text-muted">Khách chọn sân, ngày và giờ trước khi gửi yêu cầu đặt sân.</p>
-            </div>
-        </article>
-        <article class="overflow-hidden rounded-ui border border-line bg-white shadow-sm">
-            <img class="h-36 w-full object-cover" src="https://images.unsplash.com/photo-1517927033932-b3d18e61fb3a?auto=format&fit=crop&w=700&q=80" alt="Bóng đá và giày trên sân cỏ" />
-            <div class="p-4">
-                <h2 class="font-semibold text-ink">Chuẩn bị dịch vụ đi kèm</h2>
-                <p class="mt-1 text-sm text-muted">Thuê bóng, áo phân đội, nước uống hoặc trọng tài khi cần.</p>
-            </div>
-        </article>
-        <article class="overflow-hidden rounded-ui border border-line bg-white shadow-sm">
-            <img class="h-36 w-full object-cover" src="https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=700&q=80" alt="Đèn chiếu sáng trên sân bóng buổi tối" />
-            <div class="p-4">
-                <h2 class="font-semibold text-ink">Tra cứu mã đặt sân</h2>
-                <p class="mt-1 text-sm text-muted">Mỗi lượt đặt có mã riêng để khách kiểm tra lại thông tin.</p>
-            </div>
-        </article>
-    </div>
-</section>
-
-<section class="fb-container py-8">
-    <div class="mb-4 flex items-end justify-between gap-4">
+<section class="fb-container py-9">
+    <div class="mb-5 flex items-end justify-between gap-3">
         <div>
-            <h2 class="fb-section-title">Sân nổi bật hôm nay</h2>
-            <p class="fb-muted mt-1">Giá tham khảo hiển thị bằng đồng Việt Nam.</p>
+            <h2 class="fb-section-title">Danh sách sân đang nhận đặt</h2>
+            <p class="mt-1 text-sm text-muted">Tên, loại sân và giá tham khảo được lấy từ hệ thống quản lý.</p>
         </div>
-        <a class="hidden text-sm font-semibold text-brand-800 hover:text-brand-900 sm:inline" href="/fields">Xem tất cả sân</a>
+        <a class="text-sm font-semibold text-brand-800 hover:text-brand-900" href="/fields">Tất cả sân</a>
     </div>
-    <div class="grid gap-4 md:grid-cols-3">
-        @foreach (var field in fieldCards)
-        {
-            <article class="fb-card overflow-hidden">
-                <img class="aspect-[16/9] w-full object-cover" src="@field.Image" alt="Hình ảnh @field.Name" />
-                <div class="p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-semibold text-ink">@field.Name</h3>
-                            <p class="mt-1 text-sm text-muted">@field.Type · đèn LED · gửi xe miễn phí</p>
-                        </div>
-                        <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(field.Status, field.Tone)' />
-                    </div>
-                    <div class="mt-4 flex items-center justify-between gap-3">
-                        <span class="text-sm font-semibold text-brand-800">@field.Price</span>
-                        <a class="text-sm font-semibold text-brand-800 hover:text-brand-900" href="/booking">Chọn sân</a>
-                    </div>
-                </div>
-            </article>
-        }
-    </div>
-</section>
-
-<section class="border-y border-line bg-white">
-    <div class="fb-container grid gap-6 py-8 lg:grid-cols-[0.8fr_1.2fr]">
-        <div>
-            <h2 class="fb-section-title">Quy trình đặt sân</h2>
-            <p class="fb-muted mt-2">Khung giao diện bám theo luồng: chọn sân, chọn ngày, chọn giờ, thêm dịch vụ, nhập thông tin và xác nhận.</p>
-        </div>
-        <div class="grid gap-3 sm:grid-cols-3">
-            @foreach (var step in new[] { "Chọn sân và khung giờ", "Thêm dịch vụ cần chuẩn bị", "Nhận mã đặt sân để tra cứu" })
+    @if (Model.Fields.Count == 0)
+    {
+        <div class="fb-card p-5 text-sm text-muted">Chưa có sân đang nhận đặt. Vui lòng quay lại sau.</div>
+    }
+    else
+    {
+        <div class="grid gap-4 md:grid-cols-3">
+            @foreach (var field in Model.Fields)
             {
-                <div class="rounded-ui border border-line bg-slate-50 p-4 text-sm font-medium text-ink">@step</div>
+                <article class="fb-card min-w-0 overflow-hidden">
+                    <img class="aspect-[16/9] w-full object-cover" src="@Cover(field.Slug, field.CoverImagePath)" alt="@field.CoverImageAltText" />
+                    <div class="p-4">
+                        <h3 class="font-semibold text-ink">@field.Name</h3>
+                        <p class="mt-1 text-sm text-muted">@field.FieldType · @(field.Capacity?.ToString() ?? "Linh hoạt") người</p>
+                        <p class="mt-3 text-sm text-muted">@field.Address</p>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                            <span class="text-sm font-semibold text-brand-900">Từ @Money(field.PriceFrom)</span>
+                            <a class="text-sm font-semibold text-brand-800 hover:underline" href="/booking?fieldId=@field.Id">Chọn sân</a>
+                        </div>
+                    </div>
+                </article>
             }
         </div>
+    }
+</section>
+<section class="border-y border-line bg-white">
+    <div class="fb-container grid gap-6 py-9 lg:grid-cols-[0.7fr_1.3fr]">
+        <div><h2 class="fb-section-title">Đặt sân chỉ trong ba bước</h2><p class="mt-2 text-sm text-muted">Thời gian giữ chỗ chỉ bắt đầu khi yêu cầu đặt sân được chấp nhận.</p></div>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="rounded-ui border border-line p-4"><p class="text-xs font-semibold text-brand-800">01</p><p class="mt-1 text-sm font-semibold text-ink">Chọn sân và giờ</p></div>
+            <div class="rounded-ui border border-line p-4"><p class="text-xs font-semibold text-brand-800">02</p><p class="mt-1 text-sm font-semibold text-ink">Xem giá, thêm dịch vụ</p></div>
+            <div class="rounded-ui border border-line p-4"><p class="text-xs font-semibold text-brand-800">03</p><p class="mt-1 text-sm font-semibold text-ink">Xác nhận giữ sân</p></div>
+        </div>
     </div>
 </section>
-
-<section class="fb-container grid gap-6 py-8 lg:grid-cols-2">
-    <div>
+<section class="fb-container grid gap-7 py-9 lg:grid-cols-2">
+    <section>
         <h2 class="fb-section-title">Dịch vụ đi kèm</h2>
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            @foreach (var service in new[] { "Thuê bóng · 30.000 đ", "Áo phân đội · 50.000 đ", "Nước suối · 8.000 đ/chai", "Thuê trọng tài · 150.000 đ/trận" })
+            @if (Model.Services.Count == 0)
             {
-                <div class="fb-card p-3 text-sm text-ink">@service</div>
+                <p class="text-sm text-muted">Chưa có dịch vụ mở bán.</p>
+            }
+            else
+            {
+                @foreach (var service in Model.Services.Take(6))
+                {
+                    <div class="fb-card min-w-0 p-3 text-sm"><p class="font-semibold text-ink">@service.Name</p><p class="mt-1 text-brand-800">@MoneyOnly(service.UnitPrice) / @service.UnitName</p></div>
+                }
             }
         </div>
-    </div>
-    <div>
-        <h2 class="fb-section-title">Khuyến mãi mẫu</h2>
-        <div class="mt-4 fb-card p-4">
-            <partial name="Partials/_Alert" model='new AlertViewModel("Ưu đãi khung giờ trưa", "Giảm 50.000 đ cho khách đặt sân từ 11:00 đến 14:00 trong ngày thường.", "success")' />
+    </section>
+    <section>
+        <h2 class="fb-section-title">Ưu đãi đang hiển thị</h2>
+        <div class="mt-4 space-y-3">
+            @if (Model.Promotions.Count == 0)
+            {
+                <div class="fb-card p-4 text-sm text-muted">Hiện chưa có ưu đãi được mở. Giá đặt sân vẫn được tính theo bảng giá thực tế.</div>
+            }
+            else
+            {
+                @foreach (var promo in Model.Promotions.Take(3))
+                {
+                    <div class="fb-card p-4"><h3 class="text-sm font-semibold text-ink">@promo.Name</h3><p class="mt-1 text-xs text-muted">Mã: <strong>@promo.Code</strong> · Điều kiện áp dụng được kiểm tra khi đặt sân.</p></div>
+                }
+            }
         </div>
-    </div>
+    </section>
 </section>

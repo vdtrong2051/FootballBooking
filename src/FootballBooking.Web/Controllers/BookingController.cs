@@ -16,7 +16,7 @@ public sealed class BookingController(
     UserManager<ApplicationUser> userManager) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute, int? durationMinutes, CancellationToken cancellationToken)
     {
         var model = new BookingCreateViewModel();
         await PopulateCreateModelAsync(model, cancellationToken);
@@ -31,13 +31,13 @@ public sealed class BookingController(
             model.BookingDateText = date;
         }
 
-        if (startMinute is not null)
-        {
-            model.StartMinute = startMinute.Value;
-            model.EndMinute = startMinute.Value + 60;
-        }
+        if (durationMinutes is 60 or 90 or 120)
+            model.DurationMinutes = durationMinutes.Value;
 
-        await PopulateAvailabilityAndQuoteAsync(model, cancellationToken);
+        if (startMinute is >= 0)
+            model.StartMinute = startMinute.Value;
+
+        await PopulateAvailabilityAndQuoteAsync(model, cancellationToken, selectFirstAvailable: true);
         return View(model);
     }
 
@@ -46,6 +46,10 @@ public sealed class BookingController(
     public async Task<IActionResult> Create(BookingCreateViewModel model, CancellationToken cancellationToken)
     {
         await PopulateCreateModelAsync(model, cancellationToken);
+        if (model.DurationMinutes is not (60 or 90 or 120))
+            ModelState.AddModelError(nameof(model.DurationMinutes), "Thời lượng phải là 60, 90 hoặc 120 phút.");
+        if (model.StartMinute < 0)
+            ModelState.AddModelError(nameof(model.StartMinute), "Vui lòng chọn khung giờ trống.");
         var bookingDate = model.ParseBookingDate();
         if (bookingDate is null)
         {
@@ -99,6 +103,30 @@ public sealed class BookingController(
         // TempData is protected by the ASP.NET cookie provider. No phone number in URLs.
         TempData["NewBookingCode"] = result.BookingCode;
         return RedirectToAction(nameof(Success), new { code = result.BookingCode });
+    }
+
+    [HttpPost("quote")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Quote([FromBody] BookingQuoteRequestViewModel model, CancellationToken cancellationToken)
+    {
+        if (model is null || model.FieldId == Guid.Empty || model.StartMinute < 0 || model.StartMinute >= 1440
+            || model.DurationMinutes is not (60 or 90 or 120)
+            || string.IsNullOrWhiteSpace(model.BookingDateText)
+            || !DateOnly.TryParseExact(model.BookingDateText, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var bookingDate))
+            return BadRequest(new { message = "Sân, ngày, giờ hoặc thời lượng không hợp lệ." });
+
+        var items = model.Services ?? [];
+        if (items.Count > 30 || items.Any(item => item.ServiceId == Guid.Empty || item.Quantity < 0 || item.Quantity > 20))
+            return BadRequest(new { message = "Dịch vụ hoặc số lượng không hợp lệ." });
+
+        var quote = await bookingService.GetBookingQuoteAsync(new BookingQuoteQuery(
+            model.FieldId, bookingDate, model.StartMinute, model.StartMinute + model.DurationMinutes,
+            model.CustomerPhone, items.Where(item => item.Quantity > 0)
+                .Select(item => new BookingServiceSelectionCommand(item.ServiceId, item.Quantity)).ToArray(),
+            model.PromotionCode), cancellationToken);
+        Response.Headers.CacheControl = "no-store";
+        return Json(quote);
     }
 
     [HttpGet("success/{code}")]
@@ -177,16 +205,21 @@ public sealed class BookingController(
         }
     }
 
-    private async Task PopulateAvailabilityAndQuoteAsync(BookingCreateViewModel model, CancellationToken cancellationToken)
+    private async Task PopulateAvailabilityAndQuoteAsync(BookingCreateViewModel model, CancellationToken cancellationToken, bool selectFirstAvailable = false)
     {
         var bookingDate = model.ParseBookingDate();
-        if (model.FieldId == Guid.Empty || bookingDate is null)
-        {
+        if (model.FieldId == Guid.Empty || bookingDate is null || model.DurationMinutes is not (60 or 90 or 120))
             return;
-        }
 
-        model.Slots = await bookingService.GetAvailabilityAsync(model.FieldId, bookingDate.Value, cancellationToken);
-        model.Quote = await bookingService.GetPricingQuoteAsync(model.FieldId, bookingDate.Value, model.StartMinute, model.EndMinute, cancellationToken);
+        model.Slots = await bookingService.GetAvailabilityAsync(model.FieldId, bookingDate.Value, model.DurationMinutes, cancellationToken);
+        if (selectFirstAvailable && !model.Slots.Any(slot => slot.StartMinute == model.StartMinute && slot.IsAvailable))
+            model.StartMinute = model.Slots.FirstOrDefault(slot => slot.IsAvailable)?.StartMinute ?? -1;
+
+        if (model.StartMinute < 0)
+            return;
+        model.QuotePreview = await bookingService.GetBookingQuoteAsync(new BookingQuoteQuery(
+            model.FieldId, bookingDate.Value, model.StartMinute, model.EndMinute,
+            model.CustomerPhone, SelectedServices(model), model.PromotionCode), cancellationToken);
     }
 
     private async Task PopulateServicesAsync(BookingCreateViewModel model, CancellationToken cancellationToken)

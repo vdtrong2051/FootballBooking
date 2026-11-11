@@ -8,6 +8,24 @@ public sealed record PricingSegmentDto(int StartMinute, int EndMinute, long Pric
 
 public sealed record PricingQuoteDto(long CourtAmount, IReadOnlyList<PricingSegmentDto> Segments);
 
+public sealed record BookingQuoteQuery(
+    Guid FieldId,
+    DateOnly BookingDate,
+    int StartMinute,
+    int EndMinute,
+    string? CustomerPhone,
+    IReadOnlyList<BookingServiceSelectionCommand>? Services,
+    string? PromotionCode);
+
+public sealed record BookingPricePreviewDto(
+    bool IsValid,
+    long CourtAmount,
+    long ServiceAmount,
+    long DiscountAmount,
+    long TotalAmount,
+    IReadOnlyList<PricingSegmentDto> Segments,
+    IReadOnlyList<string> Errors);
+
 public sealed record ServiceItemDto(
     Guid Id,
     string Code,

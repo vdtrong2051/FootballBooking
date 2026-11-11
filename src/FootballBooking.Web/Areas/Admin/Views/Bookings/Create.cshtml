@@ -31,8 +31,12 @@
                 <input class="fb-input" asp-for="StartMinute" type="number" />
             </div>
             <div>
-                <label class="fb-label" asp-for="EndMinute">Đến phút</label>
-                <input class="fb-input" asp-for="EndMinute" type="number" />
+                <label class="fb-label" asp-for="DurationMinutes">Thời lượng</label>
+                <select class="fb-input" asp-for="DurationMinutes">
+    <option value="60">60 phút</option>
+    <option value="90">90 phút</option>
+    <option value="120">120 phút</option>
+</select>
             </div>
             <div>
                 <label class="fb-label" asp-for="CustomerName"></label>

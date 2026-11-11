@@ -8,6 +8,57 @@ namespace FootballBooking.Tests.Application;
 public sealed class BookingServiceTests
 {
     [Fact]
+    public async Task GetAvailabilityAsync_When90Minutes_UsesFullRequestedInterval()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        store.Bookings.Add(CreateExistingBooking(field.Id, 1140, 1200, BookingStatus.Confirmed));
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var slots = await service.GetAvailabilityAsync(field.Id, new DateOnly(2026, 7, 26), 90);
+
+        Assert.Contains(slots, slot => slot.StartMinute == 1080 && slot.EndMinute == 1170 && !slot.IsAvailable);
+        Assert.Contains(slots, slot => slot.StartMinute == 1050 && slot.EndMinute == 1140 && slot.IsAvailable);
+    }
+
+    [Fact]
+    public async Task GetAvailabilityAsync_When120Minutes_RejectsOverlappingBlock()
+    {
+        var field = CreateField();
+        field.AddBlock(new FieldBlock(Guid.NewGuid(), field.Id, new DateOnly(2026, 7, 26), 1110, 1170,
+            FieldBlockType.Maintenance, "Bảo trì", Guid.NewGuid(), new FixedClock().UtcNow));
+        var store = new InMemoryBookingStore(field);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var slots = await service.GetAvailabilityAsync(field.Id, new DateOnly(2026, 7, 26), 120);
+
+        Assert.Contains(slots, slot => slot.StartMinute == 1080 && slot.EndMinute == 1200 && !slot.IsAvailable);
+    }
+
+    [Fact]
+    public async Task GetBookingQuoteAsync_WithServicesAndPromotion_ComputesBackendTotal()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var extra = new ServiceItem(Guid.NewGuid(), "BALL", "Thuê bóng", "Bóng thi đấu", "quả", 30000,
+            true, 10, true, 10, new FixedClock().UtcNow);
+        store.Services.Add(extra);
+        store.Promotions.Add(new PromoCode(Guid.NewGuid(), "GD1SALE", "Ưu đãi", PromoDiscountType.FixedAmount,
+            50000, null, 300000, new FixedClock().UtcNow.AddDays(-1), new FixedClock().UtcNow.AddDays(30),
+            10, 1, null, null, null, true, new FixedClock().UtcNow));
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var quote = await service.GetBookingQuoteAsync(new BookingQuoteQuery(field.Id, new DateOnly(2026, 7, 26),
+            1080, 1170, "0901234567", [new BookingServiceSelectionCommand(extra.Id, 2)], "GD1SALE"));
+
+        Assert.True(quote.IsValid);
+        Assert.Equal(450000, quote.CourtAmount);
+        Assert.Equal(60000, quote.ServiceAmount);
+        Assert.Equal(50000, quote.DiscountAmount);
+        Assert.Equal(460000, quote.TotalAmount);
+    }
+
+    [Fact]
     public async Task CreateBookingAsync_WhenGuestBookingIsValid_CreatesPendingHoldWithVietnameseSafeCode()
     {
         var store = new InMemoryBookingStore(CreateField());

@@ -12,13 +12,16 @@ public sealed class BookingCreateViewModel
     public Guid FieldId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập ngày đặt sân.")]
-    public string BookingDateText { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+    public string BookingDateText { get; set; } = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).AddDays(1).DateTime).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 
-    [Required(ErrorMessage = "Vui lòng chọn giờ bắt đầu.")]
-    public int StartMinute { get; set; } = 1080;
+    [Range(0, 1439, ErrorMessage = "Vui lòng chọn khung giờ trống.")]
+    public int StartMinute { get; set; } = -1;
 
-    [Required(ErrorMessage = "Vui lòng chọn giờ kết thúc.")]
-    public int EndMinute { get; set; } = 1140;
+    [Range(60, 120, ErrorMessage = "Thời lượng không hợp lệ.")]
+    public int DurationMinutes { get; set; } = 60;
+
+    // Public booking never binds a manually entered end time.
+    public int EndMinute => StartMinute + DurationMinutes;
 
     [Required(ErrorMessage = "Vui lòng nhập họ tên khách.")]
     [Display(Name = "Họ tên")]
@@ -45,6 +48,7 @@ public sealed class BookingCreateViewModel
     public IReadOnlyList<FieldSummaryDto> Fields { get; set; } = [];
     public IReadOnlyList<BookingSlotDto> Slots { get; set; } = [];
     public PricingQuoteDto? Quote { get; set; }
+    public BookingPricePreviewDto? QuotePreview { get; set; }
 
     public long ServiceAmount => Services.Sum(service => service.LineTotal);
     public long EstimatedTotal => Quote is null ? ServiceAmount : Math.Max(0, Quote.CourtAmount + ServiceAmount);
@@ -62,8 +66,26 @@ public sealed class BookingServiceSelectionViewModel
     public string? Description { get; set; }
     public string UnitName { get; set; } = string.Empty;
     public long UnitPrice { get; set; }
+    [Range(0, 20, ErrorMessage = "Số lượng dịch vụ phải từ 0 đến 20.")]
     public int Quantity { get; set; }
     public long LineTotal => UnitPrice * Math.Max(0, Quantity);
+}
+
+public sealed class BookingQuoteRequestViewModel
+{
+    public Guid FieldId { get; set; }
+    public string BookingDateText { get; set; } = string.Empty;
+    public int StartMinute { get; set; }
+    public int DurationMinutes { get; set; }
+    public string? CustomerPhone { get; set; }
+    public string? PromotionCode { get; set; }
+    public List<BookingQuoteServiceRequestViewModel> Services { get; set; } = [];
+}
+
+public sealed class BookingQuoteServiceRequestViewModel
+{
+    public Guid ServiceId { get; set; }
+    public int Quantity { get; set; }
 }
 
 public sealed class BookingSuccessViewModel
