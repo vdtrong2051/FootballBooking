@@ -1,67 +1,75 @@
 @model CustomerBookingsViewModel
 @{
-    ViewData["Title"] = "Lịch đặt của tôi";
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Lịch đặt sân của tôi";
+    ViewData["AccountSection"] = "bookings";
+    var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).DateTime);
 }
 @functions {
-    private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
-    private static string FormatMinute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
+    private static string Money(long amount) => $"{amount:N0} ₫";
+    private static string Clock(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
-
-<section class="border-b border-line bg-white">
-    <div class="fb-container flex flex-col gap-3 py-8 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-brand-800">Tài khoản khách hàng</p>
-            <h1 class="mt-1 text-2xl font-semibold text-ink">Lịch đặt sân của @Model.CustomerName</h1>
-            <p class="mt-1 text-sm text-muted">Số điện thoại: @(Model.CustomerPhone ?? "Chưa cập nhật") · Email: @(Model.CustomerEmail ?? "Chưa cập nhật")</p>
+<section class="fb-account-section">
+    <p class="fb-account-kicker">Booking Management</p>
+    <h2 class="fb-account-section-title mt-1">Lịch đặt sân</h2>
+    <p class="mt-2 text-sm text-muted">Chỉ hiển thị booking thuộc tài khoản đã xác minh của bạn. Booking vãng lai cần tra cứu riêng.</p>
+    @if (Model.Bookings.Count > 0)
+    {
+        <div class="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex flex-wrap gap-2" aria-label="Bộ lọc booking">
+                <button type="button" class="fb-account-chip" data-booking-filter="all" aria-pressed="true">Tất cả</button>
+                <button type="button" class="fb-account-chip" data-booking-filter="upcoming" aria-pressed="false">Đang xử lý</button>
+                <button type="button" class="fb-account-chip" data-booking-filter="past" aria-pressed="false">Hoàn thành</button>
+                <button type="button" class="fb-account-chip" data-booking-filter="cancelled" aria-pressed="false">Đã hủy / hết hạn</button>
+            </div>
+            <label class="block w-full xl:max-w-60"><span class="sr-only">Tìm booking</span><input class="fb-input" placeholder="Tìm sân hoặc mã booking" data-booking-search-input /></label>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <a class="fb-button fb-button-primary" href="/booking">Đặt sân mới</a>
-            <form method="post" action="/account/logout">
-                @Html.AntiForgeryToken()
-                <button class="fb-button fb-button-secondary" type="submit">Đăng xuất</button>
-            </form>
-        </div>
-    </div>
-</section>
-
-<section class="fb-container py-8">
+    }
     @if (Model.Bookings.Count == 0)
     {
-        <div class="fb-card p-6">
-            <partial name="Partials/_EmptyState" model='new EmptyStateViewModel("Chưa có lượt đặt sân nào", "Bạn chưa có booking nào gắn với tài khoản hoặc số điện thoại này.", "Đặt sân ngay", "/booking", "calendar")' />
-        </div>
+        <div class="mt-6 rounded-xl bg-slate-50 p-7 text-center"><p class="text-sm text-muted">Bạn chưa có lượt đặt sân nào.</p><a class="fb-button fb-button-primary mt-4" href="/booking">Đặt sân ngay</a></div>
     }
     else
     {
-        <div class="grid gap-4">
+        <div class="mt-5 divide-y divide-line" data-bookings-list>
             @foreach (var booking in Model.Bookings)
             {
                 var canCancel = booking.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed;
-                <article class="fb-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="font-semibold text-ink">@booking.BookingCode</span>
-                            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.Status(booking.Status), BookingLabels.StatusTone(booking.Status))' />
-                            <partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.PaymentStatus(booking.PaymentStatus), booking.PaymentStatus == PaymentStatus.Paid ? "success" : "warning")' />
+                var group = booking.Status == BookingStatus.Completed ? "past"
+                    : booking.Status is BookingStatus.Cancelled or BookingStatus.Expired or BookingStatus.NoShow ? "cancelled"
+                    : "upcoming";
+                var repeatDate = booking.BookingDate > today ? booking.BookingDate : today.AddDays(1);
+                var dateValue = System.Net.WebUtility.UrlEncode(repeatDate.ToString("dd/MM/yyyy"));
+                <article class="py-5" data-booking-row data-booking-group="@group" data-booking-search="@($"{booking.BookingCode} {booking.FieldName}")">
+                    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-ink">@booking.FieldName</span><partial name="Partials/_StatusBadge" model='new StatusBadgeViewModel(BookingLabels.Status(booking.Status), BookingLabels.StatusTone(booking.Status))' /></div>
+                            <p class="mt-1 text-sm text-muted">@booking.BookingDate.ToString("dd/MM/yyyy") · @Clock(booking.StartMinute) – @Clock(booking.EndMinute)</p>
+                            <p class="mt-1 text-xs text-muted">@booking.BookingCode · @BookingLabels.PaymentStatus(booking.PaymentStatus)</p>
+                            <p class="mt-2 text-sm font-semibold text-ink">@Money(booking.TotalAmount)</p>
                         </div>
-                        <p class="mt-1 text-sm font-medium text-ink">@booking.FieldName · @booking.BookingDate.ToString("dd/MM/yyyy") (@FormatMinute(booking.StartMinute) - @FormatMinute(booking.EndMinute))</p>
-                        <p class="mt-1 text-xs text-muted">Tổng tiền: @FormatMoney(booking.TotalAmount) · Tạo lúc: @booking.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <a class="fb-button fb-button-secondary" href="/booking/success/@booking.BookingCode">Chi tiết &amp; QR thanh toán</a>
-                        <a class="fb-button fb-button-primary" href="/booking?fieldId=@booking.FieldId&amp;startMinute=@booking.StartMinute">Đặt lại khung giờ này</a>
-                        @if (canCancel)
-                        {
-                            <form method="post" action="/booking/@booking.BookingCode/cancel" class="inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="customerPhone" value="@booking.CustomerPhone" />
-                                <input type="hidden" name="cancellationReason" value="Khách hàng chủ động hủy trên trang tài khoản" />
-                                <button type="submit" class="fb-button fb-button-danger">Hủy sân</button>
-                            </form>
-                        }
+                        <div class="flex flex-wrap gap-2 xl:justify-end">
+                            <a class="fb-button fb-button-secondary" href="/booking/success/@booking.BookingCode">Chi tiết</a>
+                            @if (booking.Status == BookingStatus.PendingPayment)
+                            {
+                                <a class="fb-button fb-button-primary" href="/booking/pay/@booking.BookingCode">Tiếp tục thanh toán</a>
+                            }
+                            <a class="fb-button fb-button-secondary" href="/booking?fieldId=@booking.FieldId&amp;date=@dateValue&amp;startMinute=@booking.StartMinute&amp;durationMinutes=@(booking.EndMinute-booking.StartMinute)">Đặt lại</a>
+                            @if (canCancel)
+                            {
+                                <form method="post" action="/booking/@booking.BookingCode/cancel" onsubmit="return confirm('Xác nhận gửi yêu cầu hủy booking này?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="customerPhone" value="@booking.CustomerPhone" />
+                                    <input type="hidden" name="cancellationReason" value="Khách hàng yêu cầu hủy trong lịch sử tài khoản" />
+                                    <button type="submit" class="fb-button fb-button-secondary text-red-700">Yêu cầu hủy</button>
+                                </form>
+                            }
+                        </div>
                     </div>
                 </article>
             }
         </div>
+        <p class="mt-5 rounded-lg bg-slate-50 p-4 text-sm text-muted" data-booking-filter-empty hidden>Không có booking phù hợp với bộ lọc.</p>
+        <p class="mt-4 text-xs text-muted">Hiển thị tối đa 50 booking gần nhất; các bộ lọc chỉ áp dụng trên danh sách đã tải.</p>
     }
 </section>

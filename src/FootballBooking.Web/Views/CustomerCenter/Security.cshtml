@@ -1,0 +1,25 @@
+@model CustomerPasswordViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Bảo mật tài khoản";
+    ViewData["AccountSection"] = "security";
+}
+<section class="fb-account-section">
+    <p class="fb-account-kicker">Bảo mật</p>
+    <h2 class="fb-account-section-title mt-1">Thay đổi mật khẩu</h2>
+    <p class="mt-2 text-sm text-muted">Bạn cần xác minh mật khẩu hiện tại. Mật khẩu mới nên khác mật khẩu cũ.</p>
+    @if (TempData["SuccessMessage"] is string message) { <p class="mt-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-800" role="status">@message</p> }
+    <form action="/account/security" method="post" class="mt-6 max-w-xl space-y-4">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-sm text-red-700"></div>
+        <div><label asp-for="CurrentPassword" class="fb-label"></label><input asp-for="CurrentPassword" class="fb-input" type="password" autocomplete="current-password" /><span asp-validation-for="CurrentPassword" class="text-xs text-red-700"></span></div>
+        <div><label asp-for="NewPassword" class="fb-label"></label><input asp-for="NewPassword" class="fb-input" type="password" autocomplete="new-password" /><span asp-validation-for="NewPassword" class="text-xs text-red-700"></span></div>
+        <div><label asp-for="ConfirmPassword" class="fb-label"></label><input asp-for="ConfirmPassword" class="fb-input" type="password" autocomplete="new-password" /><span asp-validation-for="ConfirmPassword" class="text-xs text-red-700"></span></div>
+        <button class="fb-button fb-button-primary" type="submit">Cập nhật mật khẩu</button>
+    </form>
+</section>
+<section class="fb-account-section">
+    <h2 class="fb-account-section-title">Bảo vệ số điện thoại</h2>
+    <p class="mt-2 text-sm text-muted">Đổi số điện thoại bằng mật khẩu hiện tại và mã OTP gửi tới số mới. Số mới phải chưa thuộc tài khoản khác.</p>
+    <a href="/account/change-phone" class="fb-button fb-button-secondary mt-4">Đổi số điện thoại</a>
+</section>

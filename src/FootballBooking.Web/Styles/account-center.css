@@ -1,0 +1,18 @@
+/* GĐ3 reference system: Preline/TailAdmin patterns on the existing Tailwind tokens. */
+@layer components {
+  .fb-nav-link { @apply whitespace-nowrap text-sm font-medium text-ink transition hover:text-brand-700; }
+  .fb-mobile-link { @apply rounded-lg px-3 py-2.5 text-ink transition hover:bg-slate-50; }
+  .fb-account-menu > summary { list-style: none; }
+  .fb-account-menu > summary::-webkit-details-marker { display: none; }
+  .fb-avatar-trigger { @apply flex cursor-pointer select-none items-center gap-2 rounded-full border border-line bg-white px-1.5 py-1.5 transition hover:border-brand-700 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-700; }
+  .fb-avatar-initials { @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white; }
+  .fb-avatar-option { @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink transition hover:bg-slate-100; }
+  .fb-avatar-option > svg { @apply shrink-0 text-muted; }
+  .fb-account-link { @apply inline-flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-slate-50 hover:text-ink lg:w-full; }
+  .fb-account-link-active { @apply bg-brand-50 font-semibold text-brand-800; }
+  .fb-account-section { @apply rounded-xl border border-line bg-white p-5 shadow-sm sm:p-6; }
+  .fb-account-section-title { @apply text-lg font-semibold tracking-tight text-ink sm:text-xl; }
+  .fb-account-kicker { @apply text-xs font-bold uppercase tracking-widest text-brand-700; }
+  .fb-account-chip { @apply inline-flex items-center rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-muted transition hover:bg-slate-50; }
+  .fb-account-chip[aria-pressed='true'] { @apply border-brand-700 bg-brand-50 text-brand-800; }
+}

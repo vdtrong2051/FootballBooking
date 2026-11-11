@@ -1,0 +1,19 @@
+@model CustomerPhoneVerifyViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Xác thực số điện thoại mới";
+    ViewData["AccountSection"] = "security";
+}
+<section class="fb-account-section">
+    <p class="fb-account-kicker">Xác thực OTP</p>
+    <h2 class="fb-account-section-title mt-1">Xác nhận số mới</h2>
+    <p class="mt-2 text-sm text-muted">Mã đã gửi đến @Model.MaskedPhone. Mã có hiệu lực 5 phút, tối đa 5 lần nhập sai.</p>
+    @if (TempData["SuccessMessage"] is string message) { <p class="mt-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-800">@message</p> }
+    <form method="post" action="/account/verify-new-phone" class="mt-6 max-w-sm space-y-4">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-sm text-red-700"></div>
+        <div><label asp-for="Code" class="fb-label">Mã OTP (6 chữ số)</label><input asp-for="Code" class="fb-input text-center tracking-[0.3em]" inputmode="numeric" maxlength="6" autocomplete="one-time-code" /><span asp-validation-for="Code" class="text-xs text-red-700"></span></div>
+        <button type="submit" class="fb-button fb-button-primary w-full">Xác thực và đổi số</button>
+    </form>
+    <a href="/account/change-phone" class="mt-5 inline-block text-sm font-semibold text-brand-800 underline">Gửi yêu cầu mới</a>
+</section>

@@ -1,76 +1,88 @@
 @using FootballBooking.Application.Common.Security
-<header class="border-b border-line bg-white">
-    <nav class="fb-container flex min-h-16 items-center justify-between gap-4" aria-label="Điều hướng công khai">
+@using FootballBooking.Infrastructure.Identity
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var current = signedIn ? await UserManager.GetUserAsync(User) : null;
+    var accountName = current?.FullName ?? User.Identity?.Name ?? "Tài khoản";
+    var parts = accountName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var initials = parts.Length == 0 ? "TK" : string.Concat(parts.TakeLast(2).Select(word => word[..1])).ToUpperInvariant();
+    var internalUser = User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff);
+}
+<header class="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur-lg">
+    <nav class="fb-container flex min-h-16 items-center justify-between gap-3" aria-label="Điều hướng công khai">
         <partial name="Partials/_BrandLogo" />
 
-        <button type="button" class="fb-button fb-button-secondary px-3 lg:hidden" aria-label="Mở menu" data-hs-overlay="#public-mobile-menu">
-            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("menu")' />
-        </button>
-
-        <div class="hidden items-center gap-6 lg:flex">
-            <a class="text-sm font-medium text-ink hover:text-brand-800" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
-            <a class="text-sm font-medium text-ink hover:text-brand-800" href="/fields">Sân bóng</a>
-            <a class="text-sm font-medium text-ink hover:text-brand-800" href="/services">Dịch vụ</a>
-            <a class="text-sm font-medium text-ink hover:text-brand-800" href="/promotions">Khuyến mãi</a>
-            <a class="text-sm font-medium text-ink hover:text-brand-800" href="/booking/lookup">Tra cứu đặt sân</a>
-            <a class="text-sm font-medium text-ink hover:text-brand-800" href="/contact">Liên hệ</a>
+        <div class="hidden items-center gap-5 lg:flex xl:gap-6">
+            <a class="fb-nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
+            <a class="fb-nav-link" href="/fields">Sân bóng</a>
+            <a class="fb-nav-link" href="/services">Dịch vụ</a>
+            <a class="fb-nav-link" href="/promotions">Khuyến mãi</a>
+            <a class="fb-nav-link" href="/booking/lookup">Tra cứu đặt sân</a>
+            <a class="fb-nav-link" href="/contact">Liên hệ</a>
         </div>
 
-        <div class="hidden items-center gap-2 lg:flex">
-            @if (User.Identity?.IsAuthenticated == true)
+        <div class="flex shrink-0 items-center gap-2">
+            <a class="fb-button fb-button-primary hidden lg:inline-flex" href="/booking">Đặt sân ngay</a>
+            @if (signedIn)
             {
-                <span class="text-xs font-medium text-muted">@User.Identity.Name</span>
-                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
-                {
-                    <a class="fb-button fb-button-secondary" href="/admin/dashboard">Vào trang Quản trị</a>
-                }
-                <a class="fb-button fb-button-secondary" href="/account/bookings">Lịch đặt của tôi</a>
-                <form method="post" action="/account/logout" class="inline">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="fb-button fb-button-secondary">Đăng xuất</button>
-                </form>
+                <details class="fb-account-menu relative" data-account-menu>
+                    <summary class="fb-avatar-trigger group" aria-label="Mở menu tài khoản của @accountName" title="Tài khoản">
+                        <span class="fb-avatar-initials" aria-hidden="true">@initials</span>
+                        <span class="hidden max-w-32 truncate text-sm font-semibold text-ink xl:inline">@accountName</span>
+                        <svg class="h-4 w-4 text-muted transition group-hover:text-brand-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" /></svg>
+                    </summary>
+                    <div class="fb-avatar-panel absolute right-0 top-full z-50 mt-3 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border border-line bg-white p-2 shadow-xl">
+                        <a href="/account" class="group flex items-center gap-3 rounded-xl bg-slate-50 p-3 hover:bg-brand-50">
+                            <span class="fb-avatar-initials h-12 w-12 text-base" aria-hidden="true">@initials</span>
+                            <span class="min-w-0 flex-1"><span class="block truncate font-semibold text-ink">@accountName</span><span class="block text-xs text-muted">Xem trang cá nhân của bạn</span></span>
+                            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("chevron-right", "h-5 w-5 text-muted")' />
+                        </a>
+                        <div class="my-2 border-t border-line"></div>
+                        <a class="fb-avatar-option" href="/account/bookings"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("calendar", "h-5 w-5")' /> Lịch đặt sân</a>
+                        <a class="fb-avatar-option" href="/account/payments"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("credit-card", "h-5 w-5")' /> Lịch sử thanh toán</a>
+                        <a class="fb-avatar-option" href="/account/profile"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("user", "h-5 w-5")' /> Hồ sơ cá nhân</a>
+                        <a class="fb-avatar-option" href="/account/security"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("cog", "h-5 w-5")' /> Cài đặt &amp; bảo mật</a>
+                        @if (internalUser)
+                        {
+                            <a class="fb-avatar-option" href="/admin/dashboard"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("building-office", "h-5 w-5")' /> Trang quản trị</a>
+                        }
+                        <a class="fb-avatar-option" href="/account/help"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("information-circle", "h-5 w-5")' /> Trợ giúp &amp; hỗ trợ</a>
+                        <div class="my-2 border-t border-line"></div>
+                        <form method="post" action="/account/logout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="fb-avatar-option w-full text-left"><partial name="Partials/_HeroIcon" model='new HeroIconViewModel("x-mark", "h-5 w-5")' /> Đăng xuất</button>
+                        </form>
+                    </div>
+                </details>
             }
             else
             {
                 <a class="fb-button fb-button-secondary" href="/account/login">Đăng nhập</a>
-                <a class="text-sm font-medium text-brand-800 hover:underline px-2" href="/account/register">Đăng ký</a>
             }
-            <a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a>
+            <button type="button" class="fb-button fb-button-secondary px-3 lg:hidden" aria-label="Mở menu" data-hs-overlay="#public-mobile-menu">
+                <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("menu", "h-5 w-5")' />
+            </button>
         </div>
     </nav>
 </header>
 
 <div id="public-mobile-menu" class="hs-overlay pointer-events-none fixed start-0 top-0 z-80 hidden size-full overflow-hidden lg:hidden" role="dialog" tabindex="-1" aria-label="Menu công khai">
-    <div class="hs-overlay-open:translate-x-0 pointer-events-auto h-full w-80 max-w-[88vw] -translate-x-full bg-white shadow-sm transition-transform">
+    <div class="hs-overlay-open:translate-x-0 pointer-events-auto h-full w-80 max-w-[88vw] -translate-x-full bg-white shadow-xl transition-transform">
         <div class="flex min-h-16 items-center justify-between border-b border-line px-4">
             <partial name="Partials/_BrandLogo" />
             <button type="button" class="fb-button fb-button-secondary px-3" aria-label="Đóng menu" data-hs-overlay="#public-mobile-menu">
-                <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("x-mark")' />
+                <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("x-mark", "h-5 w-5")' />
             </button>
         </div>
         <div class="grid gap-1 p-4 text-sm font-medium">
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/fields">Sân bóng</a>
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/services">Dịch vụ</a>
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/promotions">Khuyến mãi</a>
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/booking/lookup">Tra cứu đặt sân</a>
-            <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/contact">Liên hệ</a>
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                @if (User.IsInRole(ApplicationRoles.Owner) || User.IsInRole(ApplicationRoles.Staff))
-                {
-                    <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/admin/dashboard">Vào trang Quản trị</a>
-                }
-                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/bookings">Lịch đặt của tôi</a>
-            }
-            else
-            {
-                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/login">Đăng nhập</a>
-                <a class="rounded-ui px-3 py-2 hover:bg-slate-50" href="/account/register">Đăng ký</a>
-            }
-            <div class="mt-3 grid gap-2">
-                <a class="fb-button fb-button-primary" href="/booking">Đặt sân ngay</a>
-            </div>
+            <a class="fb-mobile-link" href="/">Trang chủ</a>
+            <a class="fb-mobile-link" href="/fields">Sân bóng</a>
+            <a class="fb-mobile-link" href="/services">Dịch vụ</a>
+            <a class="fb-mobile-link" href="/promotions">Khuyến mãi</a>
+            <a class="fb-mobile-link" href="/booking/lookup">Tra cứu đặt sân</a>
+            <a class="fb-mobile-link" href="/contact">Liên hệ</a>
+            <div class="mt-3 border-t border-line pt-3"><a class="fb-button fb-button-primary w-full" href="/booking">Đặt sân ngay</a></div>
         </div>
     </div>
 </div>

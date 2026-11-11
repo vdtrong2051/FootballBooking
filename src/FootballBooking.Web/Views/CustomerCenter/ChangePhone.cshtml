@@ -1,0 +1,18 @@
+@model CustomerPhoneChangeViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Đổi số điện thoại";
+    ViewData["AccountSection"] = "security";
+}
+<section class="fb-account-section">
+    <p class="fb-account-kicker">Xác minh danh tính</p>
+    <h2 class="fb-account-section-title mt-1">Đổi số điện thoại</h2>
+    <p class="mt-2 text-sm text-muted">Hệ thống sẽ gửi OTP đến số mới. Không có thao tác nào thay đổi quyền sở hữu booking cũ chỉ vì trùng số.</p>
+    <form method="post" action="/account/change-phone" class="mt-6 max-w-lg space-y-4">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-sm text-red-700"></div>
+        <div><label asp-for="CurrentPassword" class="fb-label"></label><input asp-for="CurrentPassword" class="fb-input" type="password" autocomplete="current-password" /><span asp-validation-for="CurrentPassword" class="text-xs text-red-700"></span></div>
+        <div><label asp-for="NewPhone" class="fb-label"></label><input asp-for="NewPhone" class="fb-input" autocomplete="tel" inputmode="tel" placeholder="09xxxxxxxx" /><span asp-validation-for="NewPhone" class="text-xs text-red-700"></span></div>
+        <button type="submit" class="fb-button fb-button-primary">Gửi mã xác minh</button>
+    </form>
+</section>

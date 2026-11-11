@@ -1,0 +1,66 @@
+@model CustomerPaymentHistoryViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Lịch sử thanh toán";
+    ViewData["AccountSection"] = "payments";
+}
+@functions {
+    private static string Money(long value) => $"{value:N0} ₫";
+    private static string AttemptStatus(FootballBooking.Domain.Payments.PaymentAttemptStatus status) => status switch
+    {
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.Pending => "Chờ thanh toán",
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.Succeeded => "Đã xác minh",
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.Failed => "Thất bại",
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.Expired => "Hết hạn",
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.Cancelled => "Đã hủy",
+        FootballBooking.Domain.Payments.PaymentAttemptStatus.NeedsReconciliation => "Cần đối soát",
+        _ => "Không xác định"
+    };
+    private static string LedgerStatus(PaymentRecordStatus status) => status switch
+    {
+        PaymentRecordStatus.Succeeded => "Đã ghi nhận",
+        PaymentRecordStatus.Pending => "Đang chờ",
+        PaymentRecordStatus.Failed => "Thất bại",
+        PaymentRecordStatus.Cancelled => "Đã hủy",
+        _ => "Không xác định"
+    };
+}
+<section class="fb-account-section">
+    <p class="fb-account-kicker">Sổ ghi nhận</p>
+    <h2 class="fb-account-section-title mt-1">Lịch sử thanh toán</h2>
+    <p class="mt-2 text-sm text-muted">Chỉ những giao dịch đã được ghi nhận vào hệ thống. QR đang chờ không phải là bằng chứng đã nhận tiền.</p>
+    @if (Model.ReceivedPayments.Count == 0)
+    {
+        <div class="mt-5 rounded-lg bg-slate-50 p-5 text-sm text-muted">Chưa có giao dịch thanh toán nào được ghi nhận.</div>
+    }
+    else
+    {
+        <div class="mt-5 overflow-x-auto"><table class="fb-table"><thead><tr><th>Booking</th><th>Hình thức</th><th>Số tiền</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+        <tbody class="divide-y divide-line">
+            @foreach (var payment in Model.ReceivedPayments)
+            {
+                <tr><td><a class="font-semibold text-brand-800 underline" href="/booking/success/@payment.BookingCode">@payment.BookingCode</a></td><td>@BookingLabels.PaymentMethod(payment.Method)</td><td class="whitespace-nowrap font-semibold">@Money(payment.Amount)</td><td>@LedgerStatus(payment.Status)</td><td class="whitespace-nowrap">@payment.CreatedAtUtc.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</td></tr>
+            }
+        </tbody></table></div>
+    }
+</section>
+<section class="fb-account-section">
+    <h2 class="fb-account-section-title">Yêu cầu thanh toán</h2>
+    <p class="mt-2 text-sm text-muted">Các lần tạo hướng dẫn thanh toán từ GĐ2, bao gồm giao dịch chưa xác nhận và cần đối soát.</p>
+    @if (Model.Attempts.Count == 0)
+    {
+        <p class="mt-4 rounded-lg bg-slate-50 p-5 text-sm text-muted">Bạn chưa tạo yêu cầu thanh toán nào.</p>
+    }
+    else
+    {
+        <div class="mt-4 divide-y divide-line">
+            @foreach (var attempt in Model.Attempts)
+            {
+                <div class="flex flex-wrap items-center justify-between gap-3 py-4">
+                    <div class="min-w-0"><a class="font-semibold text-ink underline" href="/booking/pay/@attempt.BookingCode">@attempt.BookingCode</a><p class="mt-1 break-all text-xs text-muted">@attempt.RequestCode · @BookingLabels.PaymentMethod(attempt.Method)</p></div>
+                    <div class="text-right"><div class="font-semibold text-ink">@Money(attempt.Amount)</div><div class="mt-1 text-xs @(attempt.Status == FootballBooking.Domain.Payments.PaymentAttemptStatus.NeedsReconciliation ? "text-amber-700" : "text-muted")">@AttemptStatus(attempt.Status)</div></div>
+                </div>
+            }
+        </div>
+    }
+</section>

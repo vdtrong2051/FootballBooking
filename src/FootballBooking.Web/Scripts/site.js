@@ -6,4 +6,9 @@ const initializePreline = () => {
   }
 };
 
-document.addEventListener("DOMContentLoaded", initializePreline);
+import { initializeAccountCenter } from "./account-center.js";
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializePreline();
+  initializeAccountCenter();
+});

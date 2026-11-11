@@ -1,0 +1,26 @@
+@{
+    Layout = "_PublicLayout";
+}
+<section class="bg-page pb-14 pt-8 sm:pt-10">
+    <div class="fb-container">
+        <div class="mb-7 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.15em] text-brand-700">FootballBooking / Tài khoản</p>
+                <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Không gian của bạn</h1>
+                <p class="mt-2 text-sm text-muted">Lịch đặt, giao dịch và thông tin cá nhân — ở cùng một nơi.</p>
+            </div>
+            <a href="/booking" class="fb-button fb-button-primary">Đặt sân mới</a>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-7">
+            <aside class="min-w-0">
+                <partial name="Partials/_AccountSidebar" />
+            </aside>
+            <div class="min-w-0 space-y-5">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+</section>
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddSingleton<IBookingWriteLock>(_ => new MySqlBookingWriteLock(connectionString));
         services.AddHttpClient<IPhoneSmsSender, PhoneSmsSender>();
         services.AddScoped<PhoneOtpService>();
+        services.AddScoped<PhoneChangeOtpService>();
 
         services.AddScoped<IFieldStore, EfFieldStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();

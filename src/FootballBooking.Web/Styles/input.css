@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @import "../../../node_modules/preline/variants.css";
+@import "./account-center.css";
 
 @source "../Views/**/*.cshtml";
 @source "../Areas/**/*.cshtml";

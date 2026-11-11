@@ -1,0 +1,25 @@
+@{
+    var current = ViewData["AccountSection"] as string ?? "overview";
+}
+<nav aria-label="Điều hướng tài khoản" class="fb-card overflow-hidden p-2 lg:sticky lg:top-5">
+    <div class="flex gap-1 overflow-x-auto lg:flex-col">
+        <a href="/account" aria-current="@(current == "overview" ? "page" : null)" class="fb-account-link @(current == "overview" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("home", "h-[18px] w-[18px]")' /> Tổng quan
+        </a>
+        <a href="/account/bookings" aria-current="@(current == "bookings" ? "page" : null)" class="fb-account-link @(current == "bookings" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("calendar", "h-[18px] w-[18px]")' /> Lịch đặt sân
+        </a>
+        <a href="/account/payments" aria-current="@(current == "payments" ? "page" : null)" class="fb-account-link @(current == "payments" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("credit-card", "h-[18px] w-[18px]")' /> Thanh toán
+        </a>
+        <a href="/account/profile" aria-current="@(current == "profile" ? "page" : null)" class="fb-account-link @(current == "profile" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("user", "h-[18px] w-[18px]")' /> Hồ sơ
+        </a>
+        <a href="/account/security" aria-current="@(current == "security" ? "page" : null)" class="fb-account-link @(current == "security" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("cog", "h-[18px] w-[18px]")' /> Bảo mật
+        </a>
+        <a href="/account/help" aria-current="@(current == "help" ? "page" : null)" class="fb-account-link @(current == "help" ? "fb-account-link-active" : "")">
+            <partial name="Partials/_HeroIcon" model='new HeroIconViewModel("information-circle", "h-[18px] w-[18px]")' /> Hỗ trợ
+        </a>
+    </div>
+</nav>
