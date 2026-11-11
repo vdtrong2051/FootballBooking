@@ -7,7 +7,7 @@
     private static string FormatMinute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
 
-<section class="fb-card p-4">
+<section class="fb4c-payment-panel fb-card p-4">
     <h1 class="text-xl font-semibold text-ink">Thanh toán</h1>
     <p class="mt-1 text-sm text-muted">Theo dõi các lượt đặt sân còn cần ghi nhận cọc hoặc thu thêm tại sân.</p>
     <div class="mt-4 overflow-x-auto">
@@ -42,7 +42,7 @@
 @{
     var gd2Attempts = ViewData["GD2Attempts"] as IReadOnlyList<FootballBooking.Application.Payments.PaymentAttemptDto>;
 }
-<section class="fb-card mt-6 p-4">
+<section class="fb4c-reconciliation-panel fb-card mt-6 p-4">
     <h2 class="text-lg font-semibold text-ink">GĐ2 · Lần thử thanh toán &amp; đối soát</h2>
     <p class="mt-2 text-sm text-muted">Chỉ xác nhận sau khi kiểm tra ngân hàng/POS thực tế. QR không phải bằng chứng nhận tiền. Lần thử hết hạn hoặc sai số tiền phải đối soát riêng.</p>
     @if (TempData["ErrorMessage"] is string gd2Error)

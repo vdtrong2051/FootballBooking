@@ -1,21 +1,27 @@
-<header class="sticky top-0 z-30 border-b border-line bg-white">
-    <div class="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
-        <div class="flex items-center gap-3">
-            <button class="fb-button fb-button-secondary px-3 lg:hidden" type="button" aria-label="Mở menu quản trị" data-hs-overlay="#admin-mobile-sidebar">
+@{
+    var localToday = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7));
+    var accountLabel = User.Identity?.Name ?? "Nhân viên";
+}
+<header class="fb4c-admin-topbar sticky top-0 z-30 border-b border-line bg-white">
+    <div class="fb4c-topbar-inner flex min-h-16 items-center justify-between gap-3 px-4 lg:px-6">
+        <div class="flex min-w-0 items-center gap-3">
+            <button class="fb-button fb-button-secondary shrink-0 px-3 lg:hidden" type="button" aria-label="Mở menu quản trị" data-hs-overlay="#admin-mobile-sidebar">
                 <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model='new HeroIconViewModel("menu")' />
             </button>
-            <div>
-                <p class="text-xs font-medium uppercase text-muted">Khu vực nội bộ</p>
-                <h1 class="text-base font-semibold text-ink">@ViewData["Title"]</h1>
+            <div class="min-w-0">
+                <p class="fb4c-topbar-eyebrow text-xs font-medium uppercase text-muted">FootballBooking · Quản trị</p>
+                <h1 class="truncate text-base font-semibold text-ink">@ViewData["Title"]</h1>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <div class="hidden items-center rounded-ui border border-line bg-slate-50 px-3 py-2 text-sm text-muted sm:flex">
-                <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model='new HeroIconViewModel("clock", "mr-2 h-4 w-4")' />
-                <span>25/07/2026 · 18:30</span>
-            </div>
+        <div class="fb4c-topbar-tools flex shrink-0 items-center gap-2">
+            <span class="fb4c-today hidden text-xs text-muted md:inline-flex" aria-label="Ngày hiện tại theo giờ Việt Nam">
+                <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model='new HeroIconViewModel("calendar", "h-4 w-4")' />
+                @localToday.ToString("dd/MM/yyyy")
+            </span>
+            <a class="fb4c-site-link hidden text-sm font-medium sm:inline-flex" href="/">Xem website</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
+                <span class="fb4c-user-chip hidden max-w-44 truncate text-xs font-medium text-ink xl:inline-flex" title="@accountLabel">@accountLabel</span>
                 <form asp-area="Admin" asp-controller="Auth" asp-action="Logout" method="post">
                     <button type="submit" class="fb-button fb-button-secondary">Đăng xuất</button>
                 </form>

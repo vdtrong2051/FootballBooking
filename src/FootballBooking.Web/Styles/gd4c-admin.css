@@ -1,0 +1,115 @@
+/* GD4-C • TailAdmin-inspired operations UI. Scoped to admin only.
+ * Intentionally uses standard CSS, not Tailwind apply directives or group utility.
+ */
+@layer components {
+  .fb4c-admin-body { background:#f5f8f6; color:#172a20; }
+  .fb4c-admin-shell { width:100%; max-width:100%; }
+  .fb4c-admin-workspace { min-width:0; max-width:100%; background:radial-gradient(circle at 90% 2%,#eaf5ee 0%,transparent 20%),#f6f8f7; }
+  .fb4c-admin-content { width:100%; max-width:1640px; min-width:0; margin-inline:auto; padding-bottom:4.5rem; }
+  .fb4c-skip-link { position:fixed; top:-100px; left:16px; z-index:200; padding:.7rem 1rem; border-radius:.6rem; background:#0f5132; color:#fff; }
+  .fb4c-skip-link:focus { top:12px; }
+  .fb4c-sidebar { overflow-y:auto; scrollbar-width:thin; border-color:#e3eae5; box-shadow:2px 0 16px rgba(13,54,30,.025); }
+  .fb4c-sidebar-brand { background:linear-gradient(90deg,#f6fbf8,#fff); }
+  .fb4c-sidebar-intro { padding:1.55rem 1.25rem .55rem; letter-spacing:.17em; font-size:.65rem; font-weight:800; color:#197345; }
+  .fb4c-sidebar-nav { padding:.35rem .65rem 2rem; }
+  .fb4c-nav-group + .fb4c-nav-group { border-top:1px solid #edf1ee; margin-top:1rem; padding-top:.8rem; }
+  .fb4c-nav-label { margin:.4rem .75rem .5rem; font-size:.65rem; font-weight:750; letter-spacing:.13em; text-transform:uppercase; color:#86948b; }
+  .fb4c-nav-link { display:flex; min-height:2.8rem; align-items:center; gap:.78rem; padding:.7rem .85rem; border:1px solid transparent; border-radius:.75rem; font-size:.86rem; font-weight:580; line-height:1.3; color:#56685c; transition:background .18s ease,color .18s ease,border-color .18s ease; }
+  .fb4c-nav-link svg { width:1.15rem; height:1.15rem; flex:none; }
+  .fb4c-nav-link:hover { background:#f1f8f3; color:#105e36; }
+  .fb4c-nav-link-current { border-color:#b8dfc5; background:#e8f7ec; color:#105d32; font-weight:750; box-shadow:inset 3px 0 0 #16803d; }
+  .fb4c-mobile-sidebar { overflow-y:auto; overscroll-behavior:contain; }
+  .fb4c-admin-topbar { background:rgba(255,255,255,.94); backdrop-filter:blur(14px); border-color:#e1eae4; }
+  .fb4c-topbar-inner { min-height:4.25rem; }
+  .fb4c-topbar-eyebrow { letter-spacing:.12em; font-size:.62rem; }
+  .fb4c-today { align-items:center; gap:.45rem; padding:.55rem .72rem; border-radius:.65rem; background:#f3f7f4; white-space:nowrap; }
+  .fb4c-site-link { min-height:2.4rem; align-items:center; border-radius:.65rem; padding:.5rem .8rem; color:#226840; transition:background .15s ease; }
+  .fb4c-site-link:hover { background:#e9f6ed; }
+  .fb4c-user-chip { max-width:11rem; padding:.55rem .75rem; background:#eef7f0; border:1px solid #dbece0; border-radius:999px; }
+  .fb4c-admin-content > .space-y-5, .fb4c-admin-content > .space-y-6 { min-width:0; }
+  .fb4c-admin-content .fb-card { min-width:0; border-color:#e1e9e3; border-radius:1rem; box-shadow:0 8px 28px rgba(11,42,24,.045); }
+  .fb4c-admin-content :is(h1,h2) { letter-spacing:-.022em; }
+  .fb4c-admin-content .fb-label { color:#435b4b; }
+  .fb4c-admin-content .fb-input { min-height:2.65rem; min-width:0; max-width:100%; border-radius:.7rem; border-color:#d9e5dd; }
+  .fb4c-admin-content :is(.fb-button-primary,.fb-button-secondary,.fb-button-danger) { border-radius:.68rem; }
+  .fb4c-admin-content :is(.fb-button,.fb-input):focus-visible { outline-color:#16803d; }
+  .fb4c-admin-content :is(form,section,article,div) { max-width:100%; }
+  .fb4c-admin-content .overflow-x-auto { overscroll-behavior-inline:contain; scrollbar-width:thin; scrollbar-color:#c0d3c5 transparent; }
+  .fb4c-admin-content .overflow-x-auto > table { min-width:710px; border-collapse:separate; border-spacing:0; }
+  .fb4c-admin-content .overflow-x-auto > table th { white-space:nowrap; color:#64776a; letter-spacing:.035em; font-size:.69rem; font-weight:750; text-transform:uppercase; padding:.85rem .85rem; background:#f9fbf9; }
+  .fb4c-admin-content .overflow-x-auto > table td { vertical-align:middle; padding:.85rem; border-bottom:1px solid #edf1ee; }
+  .fb4c-admin-content .overflow-x-auto > table tbody tr:last-child td { border-bottom:0; }
+  .fb4c-admin-content .overflow-x-auto > table tbody tr:hover { background:#f8fcf9; }
+  .fb4c-admin-content .overflow-x-auto > table a { text-underline-offset:3px; }
+  .fb4c-admin-content .overflow-x-auto > table input { min-width:7rem; }
+  .fb4c-admin-content .overflow-x-auto > table form { min-width:21rem; }
+  .fb4c-admin-content .overflow-x-auto > table form input[name='externalReference'] { min-width:12rem; }
+  .fb4c-admin-content .overflow-x-auto > table form input[name='receivedAmount'] { min-width:8rem; }
+  .fb4c-admin-content .fb4c-table-hint { margin-top:.75rem; color:#64776a; font-size:.76rem; }
+  .fb4c-page-heading { padding:.25rem 0 .5rem; }
+  .fb4c-filter-panel { border:1px solid #dfeae2 !important; background:#fff; }
+  .fb4c-metric { position:relative; display:flex; min-height:9.4rem; flex-direction:column; gap:.7rem; justify-content:space-between; overflow:hidden; padding:1.2rem 1.25rem; border-top:3px solid #298457 !important; background:linear-gradient(140deg,#fff 62%,#f5fbf7); }
+  .fb4c-metric-heading { display:flex; justify-content:space-between; align-items:center; gap:.7rem; }
+  .fb4c-metric-heading p { line-height:1.3; }
+  .fb4c-metric-mark { display:block; flex:none; width:2rem; height:2rem; border-radius:.65rem; background:linear-gradient(145deg,#e0f5e7,#f4fbf5); box-shadow:inset 0 0 0 1px #d7ebdc; }
+  .fb4c-metric-value { font-size:clamp(1.4rem,2.5vw,1.9rem); line-height:1.15; font-variant-numeric:tabular-nums; letter-spacing:-.035em; overflow-wrap:anywhere; }
+  .fb4c-metric-note { line-height:1.4; color:#627768; }
+  .fb4c-metric[data-tone='danger'] { border-top-color:#dc5f5f !important; }
+  .fb4c-metric[data-tone='warning'] { border-top-color:#e5a33c !important; }
+  .fb4c-metric[data-tone='info'] { border-top-color:#428bc3 !important; }
+  .fb4c-metric[data-tone='neutral'] { border-top-color:#94a89b !important; }
+  .fb4c-dashboard .fb-card h2 { font-size:1rem; letter-spacing:-.025em; }
+  .fb4c-dashboard canvas { max-width:100%; }
+  .fb4c-schedule .fb4c-schedule-card { background:linear-gradient(120deg,#fff,#f7fbf8); }
+  .fb4c-calendar-card { overflow:hidden; }
+  .fb4c-calendar-error { margin-bottom:1rem; padding:.85rem 1rem; border:1px solid #e9aaaa; border-radius:.65rem; background:#fff3f3; font-size:.85rem; color:#a32929; }
+  .fb4c-calendar-error[hidden] { display:none; }
+  .fb4c-schedule-legend { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
+  .fb4c-schedule-legend span { border-radius:999px; white-space:normal; }
+  .fb4c-calendar-card #admin-schedule-calendar { min-width:0; max-width:100%; overflow-x:auto; }
+  .fb4c-calendar-card .fc { width:100%; min-width:0; --fc-border-color:#e2e9e4; --fc-page-bg-color:#fff; --fc-neutral-bg-color:#f8faf8; --fc-today-bg-color:#edf8f0; }
+  .fb4c-calendar-card .fc .fc-toolbar { margin-bottom:1.2rem; row-gap:.9rem; }
+  .fb4c-calendar-card .fc .fc-toolbar-title { letter-spacing:-.028em; font-size:1rem; }
+  .fb4c-calendar-card .fc .fc-button { font-size:.8rem; min-height:2.2rem; padding:.45rem .7rem; }
+  .fb4c-calendar-card .fc .fc-col-header-cell { padding:.4rem .1rem; }
+  .fb4c-calendar-card .fc .fc-timegrid-event { border-radius:.55rem; padding:.16rem; }
+  .fb4c-calendar-card .fc .fc-daygrid-event { border-radius:.45rem; }
+  .fb4c-calendar-card .fc .fc-timegrid-axis { width:3.9rem; }
+  .fb4c-ops-panel .fb-card { padding:1.2rem; }
+  .fb4c-ops-panel .fb-card + .fb-card { margin-top:1rem; }
+}
+@media(max-width:1199px) {
+  .fb4c-admin-content .overflow-x-auto > table { min-width:690px; }
+  .fb4c-schedule .fb4c-ops-panel { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr)); align-items:start; }
+}
+@media(max-width:1023px) {
+  .fb4c-admin-content { padding-inline:1rem; }
+  .fb4c-admin-content .fb-card { border-radius:.85rem; }
+  .fb4c-sidebar { display:none; }
+}
+@media(max-width:767px) {
+  .fb4c-admin-content { padding-inline:.85rem; padding-top:1rem; }
+  .fb4c-topbar-inner { padding-inline:.85rem; }
+  .fb4c-admin-content .fb-card { box-shadow:0 3px 15px rgba(10,47,28,.04); }
+  .fb4c-admin-content .overflow-x-auto > table { min-width:680px; }
+  .fb4c-admin-content .fb4c-page-heading .fb-button { width:100%; }
+  .fb4c-schedule .fb4c-schedule-card > form { grid-template-columns:1fr; }
+  .fb4c-calendar-card { padding:1rem; }
+  .fb4c-calendar-card .fc .fc-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+  .fb4c-calendar-card .fc .fc-toolbar-chunk:nth-child(2) { flex-basis:100%; order:-1; }
+  .fb4c-calendar-card .fc .fc-toolbar-title { font-size:1rem; }
+  .fb4c-calendar-card .fc .fc-button { font-size:.76rem; padding:.43rem .55rem; }
+  .fb4c-calendar-card .fc .fc-timegrid-axis { width:3.2rem; }
+  .fb4c-schedule .fb4c-ops-panel { grid-template-columns:1fr; }
+  .fb4c-metric { min-height:8rem; padding:1rem; }
+}
+@media(max-width:420px) {
+  .fb4c-topbar-eyebrow { display:none; }
+  .fb4c-site-link { display:none; }
+  .fb4c-admin-content .fb-button { min-height:2.55rem; }
+  .fb4c-calendar-card .fc .fc-toolbar-chunk { max-width:100%; }
+  .fb4c-calendar-card .fc .fc-button { padding-inline:.4rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .fb4c-nav-link, .fb4c-site-link { transition:none !important; }
+}

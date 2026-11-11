@@ -20,10 +20,12 @@ if (calendarElement) {
   const fieldId = calendarElement.dataset.fieldId;
   const status = calendarElement.dataset.status;
   const initialDate = calendarElement.dataset.initialDate;
+  const calendarError = document.getElementById("fb4c-calendar-error");
+  let compactView = window.matchMedia("(max-width: 767px)").matches;
 
   const calendar = new Calendar(calendarElement, {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    initialView: window.matchMedia("(max-width: 640px)").matches ? "timeGridDay" : "timeGridWeek",
+    initialView: compactView ? "timeGridDay" : "timeGridWeek",
     initialDate,
     locale: viLocale,
     firstDay: 1,
@@ -35,10 +37,21 @@ if (calendarElement) {
     slotDuration: "00:30:00",
     height: "auto",
     expandRows: true,
+    windowResize: () => {
+      const small = window.matchMedia("(max-width: 767px)").matches;
+      if (small === compactView) return;
+      compactView = small;
+      calendar.setOption("headerToolbar", {
+        left: "prev,next today",
+        center: "title",
+        right: small ? "timeGridDay,dayGridMonth" : "dayGridMonth,timeGridWeek,timeGridDay",
+      });
+      calendar.changeView(small ? "timeGridDay" : "timeGridWeek");
+    },
     headerToolbar: {
       left: "prev,next today",
       center: "title",
-      right: "dayGridMonth,timeGridWeek,timeGridDay",
+      right: compactView ? "timeGridDay,dayGridMonth" : "dayGridMonth,timeGridWeek,timeGridDay",
     },
     buttonText: vietnameseButtons,
     events: (info, successCallback, failureCallback) => {
@@ -60,9 +73,19 @@ if (calendarElement) {
 
           return response.json();
         })
-        .then(successCallback)
+        .then((events) => {
+          if (calendarError) {
+            calendarError.hidden = true;
+            calendarError.textContent = "";
+          }
+          successCallback(events);
+        })
         .catch((error) => {
-          calendarElement.innerHTML = `<div class="rounded-ui border border-red-200 bg-red-50 p-4 text-sm text-red-800">${error.message}</div>`;
+          // Keep FullCalendar mounted: display a separate accessible error instead.
+          if (calendarError) {
+            calendarError.textContent = error.message;
+            calendarError.hidden = false;
+          }
           failureCallback(error);
         });
     },

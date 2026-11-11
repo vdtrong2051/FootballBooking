@@ -4,6 +4,7 @@
 @import "./account-center.css";
 @import "./public-refresh.css";
 @import "./gd4b-experience.css";
+@import "./gd4c-admin.css";
 
 @source "../Views/**/*.cshtml";
 @source "../Areas/**/*.cshtml";

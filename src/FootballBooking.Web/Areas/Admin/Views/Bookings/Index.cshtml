@@ -8,8 +8,8 @@
     private static string FormatMinute(int minute) => $"{minute / 60:00}:{minute % 60:00}";
 }
 
-<div class="space-y-5">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="fb4c-list-page space-y-6">
+    <div class="fb4c-page-heading flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-ink">Lịch đặt sân</h1>
             <p class="mt-1 text-sm text-muted">Theo dõi lượt đặt sân từ website và lượt đặt do nhân viên tạo.</p>
@@ -17,7 +17,7 @@
         <a class="fb-button fb-button-primary" href="/admin/bookings/create">Tạo đặt sân</a>
     </div>
 
-    <form class="fb-card grid gap-3 p-4 md:grid-cols-4" method="get">
+    <form class="fb4c-filter-panel fb-card grid gap-3 p-4 md:grid-cols-4" method="get">
         <div>
             <label class="fb-label" for="bookingDateText">Ngày</label>
             <input class="fb-input" id="bookingDateText" name="bookingDateText" value="@Model.BookingDateText" placeholder="dd/MM/yyyy" />

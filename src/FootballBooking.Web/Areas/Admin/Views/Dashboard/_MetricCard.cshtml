@@ -1,9 +1,12 @@
 @model FootballBooking.Application.Reports.SummaryMetricDto
-
-<section class="fb-card p-4">
-    <p class="text-sm text-muted">@Model.Label</p>
-    <p class="mt-2 text-2xl font-semibold text-ink">@Model.Value</p>
-    <div class="mt-3">
-        <partial name="~/Views/Shared/Partials/_StatusBadge.cshtml" model='new StatusBadgeViewModel(Model.Note, Model.Tone)' />
+<section class="fb4c-metric fb-card" data-tone="@Model.Tone">
+    <div class="fb4c-metric-heading">
+        <p class="text-sm font-medium text-muted">@Model.Label</p>
+        <span class="fb4c-metric-mark" aria-hidden="true"></span>
     </div>
+    <p class="fb4c-metric-value text-2xl font-bold text-ink">@Model.Value</p>
+    @if (!string.IsNullOrWhiteSpace(Model.Note))
+    {
+        <p class="fb4c-metric-note text-xs text-muted">@Model.Note</p>
+    }
 </section>

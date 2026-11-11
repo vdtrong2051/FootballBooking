@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -6,12 +6,13 @@
     <title>@ViewData["Title"] - Quản trị Sân bóng An Phú</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="min-h-screen bg-page">
-    <div class="flex min-h-screen">
+<body class="fb4c-admin-body min-h-screen bg-page">
+    <a class="fb4c-skip-link" href="#admin-main">Đến nội dung chính</a>
+    <div class="fb4c-admin-shell flex min-h-screen">
         <partial name="Partials/_AdminSidebar" />
-        <div class="min-w-0 flex-1">
+        <div class="fb4c-admin-workspace min-w-0 flex-1">
             <partial name="Partials/_AdminTopbar" />
-            <main class="px-4 py-5 lg:px-6">
+            <main id="admin-main" class="fb4c-admin-content px-4 py-5 lg:px-6">
                 @if (ViewData["Breadcrumbs"] is IReadOnlyList<BreadcrumbItemViewModel> breadcrumbs)
                 {
                     <partial name="~/Views/Shared/Partials/_Breadcrumb.cshtml" model="breadcrumbs" />

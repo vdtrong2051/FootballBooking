@@ -1,62 +1,70 @@
 @using FootballBooking.Application.Common.Security
-
 @{
     var isOwner = User.IsInRole(ApplicationRoles.Owner);
     var items = new[]
     {
-        new { Label = "Tổng quan", Url = "/admin/dashboard", Icon = "home", Visible = true },
-        new { Label = "Lịch sân", Url = "/admin/schedule", Icon = "calendar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
-        new { Label = "Lịch đặt sân", Url = "/admin/bookings", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
-        new { Label = "Thanh toán", Url = "/admin/payments", Icon = "credit-card", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManagePayments) },
-        new { Label = "Quản lý sân", Url = "/admin/fields", Icon = "building-office", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
-        new { Label = "Dịch vụ", Url = "/admin/services", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
-        new { Label = "Khuyến mãi", Url = "/admin/promotions", Icon = "tag", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
-        new { Label = "Báo cáo", Url = "/admin/reports", Icon = "chart-bar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ViewReports) },
-        new { Label = "Nhân viên & Lương", Url = "/admin/staff", Icon = "users", Visible = isOwner }
+        new { Group = "Vận hành", Label = "Tổng quan", Url = "/admin/dashboard", Icon = "home", Visible = true },
+        new { Group = "Vận hành", Label = "Lịch sân", Url = "/admin/schedule", Icon = "calendar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
+        new { Group = "Vận hành", Label = "Lịch đặt sân", Url = "/admin/bookings", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
+        new { Group = "Vận hành", Label = "Thanh toán", Url = "/admin/payments", Icon = "credit-card", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManagePayments) },
+        new { Group = "Danh mục", Label = "Quản lý sân", Url = "/admin/fields", Icon = "building-office", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Group = "Danh mục", Label = "Dịch vụ", Url = "/admin/services", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Group = "Danh mục", Label = "Khuyến mãi", Url = "/admin/promotions", Icon = "tag", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Group = "Phân tích & nhân sự", Label = "Báo cáo", Url = "/admin/reports", Icon = "chart-bar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ViewReports) },
+        new { Group = "Phân tích & nhân sự", Label = "Nhân viên & Lương", Url = "/admin/staff", Icon = "users", Visible = isOwner }
     };
+    var groups = new[] { "Vận hành", "Danh mục", "Phân tích & nhân sự" };
+    var currentPath = Context.Request.Path.Value ?? string.Empty;
 }
-
-<aside class="hidden h-screen w-64 shrink-0 border-r border-line bg-white lg:sticky lg:top-0 lg:block">
-    <div class="flex h-16 items-center border-b border-line px-4">
+<aside class="fb4c-sidebar hidden h-screen w-64 shrink-0 border-r border-line bg-white lg:sticky lg:top-0 lg:block">
+    <div class="fb4c-sidebar-brand flex h-16 items-center border-b border-line px-4">
         <partial name="~/Views/Shared/Partials/_BrandLogo.cshtml" />
     </div>
-    <nav class="grid gap-1 p-3 text-sm" aria-label="Điều hướng quản trị">
-        @foreach (var item in items)
+    <div class="fb4c-sidebar-intro">QUẢN TRỊ VẬN HÀNH</div>
+    <nav class="fb4c-sidebar-nav" aria-label="Điều hướng quản trị">
+        @foreach (var group in groups)
         {
-            if (!item.Visible)
-            {
-                continue;
-            }
-
-            var isActive = Context.Request.Path.Value?.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase) == true;
-            <a class="flex items-center gap-3 rounded-ui px-3 py-2 font-medium transition @(isActive ? "bg-brand-50 text-brand-800" : "text-muted hover:bg-slate-50 hover:text-ink")" href="@item.Url">
-                <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model="new HeroIconViewModel(item.Icon)" />
-                <span>@item.Label</span>
-            </a>
+            if (!items.Any(item => item.Visible && item.Group == group)) { continue; }
+            <div class="fb4c-nav-group">
+                <p class="fb4c-nav-label">@group</p>
+                @foreach (var item in items.Where(item => item.Visible && item.Group == group))
+                {
+                    var active = currentPath.Equals(item.Url, StringComparison.OrdinalIgnoreCase)
+                        || currentPath.StartsWith(item.Url + "/", StringComparison.OrdinalIgnoreCase);
+                    <a class="fb4c-nav-link @(active ? "fb4c-nav-link-current" : "")" href="@item.Url" aria-current="@(active ? "page" : null)">
+                        <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model="new HeroIconViewModel(item.Icon)" />
+                        <span>@item.Label</span>
+                    </a>
+                }
+            </div>
         }
     </nav>
 </aside>
 
 <div id="admin-mobile-sidebar" class="hs-overlay pointer-events-none fixed start-0 top-0 z-80 hidden size-full overflow-hidden lg:hidden" role="dialog" tabindex="-1" aria-label="Menu quản trị">
-    <div class="hs-overlay-open:translate-x-0 pointer-events-auto h-full w-80 max-w-[88vw] -translate-x-full bg-white shadow-sm transition-transform">
+    <div class="fb4c-mobile-sidebar hs-overlay-open:translate-x-0 pointer-events-auto h-full w-80 max-w-[88vw] -translate-x-full bg-white shadow-xl transition-transform">
         <div class="flex h-16 items-center justify-between border-b border-line px-4">
             <partial name="~/Views/Shared/Partials/_BrandLogo.cshtml" />
             <button class="fb-button fb-button-secondary px-3" type="button" aria-label="Đóng menu" data-hs-overlay="#admin-mobile-sidebar">
                 <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model='new HeroIconViewModel("x-mark")' />
             </button>
         </div>
-        <nav class="grid gap-1 p-3 text-sm" aria-label="Điều hướng quản trị trên di động">
-            @foreach (var item in items)
+        <nav class="fb4c-sidebar-nav" aria-label="Điều hướng quản trị trên di động">
+            @foreach (var group in groups)
             {
-                if (!item.Visible)
-                {
-                    continue;
-                }
-
-                <a class="flex items-center gap-3 rounded-ui px-3 py-2 font-medium text-muted hover:bg-slate-50 hover:text-ink" href="@item.Url">
-                    <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model="new HeroIconViewModel(item.Icon)" />
-                    <span>@item.Label</span>
-                </a>
+                if (!items.Any(item => item.Visible && item.Group == group)) { continue; }
+                <div class="fb4c-nav-group">
+                    <p class="fb4c-nav-label">@group</p>
+                    @foreach (var item in items.Where(item => item.Visible && item.Group == group))
+                    {
+                        var active = currentPath.Equals(item.Url, StringComparison.OrdinalIgnoreCase)
+                            || currentPath.StartsWith(item.Url + "/", StringComparison.OrdinalIgnoreCase);
+                        <a class="fb4c-nav-link @(active ? "fb4c-nav-link-current" : "")" href="@item.Url" aria-current="@(active ? "page" : null)">
+                            <partial name="~/Views/Shared/Partials/_HeroIcon.cshtml" model="new HeroIconViewModel(item.Icon)" />
+                            <span>@item.Label</span>
+                        </a>
+                    }
+                </div>
             }
         </nav>
     </div>

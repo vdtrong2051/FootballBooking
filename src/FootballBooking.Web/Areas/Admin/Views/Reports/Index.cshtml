@@ -17,7 +17,7 @@
     var monthToIso = new DateOnly(Model.ToDate.Year, Model.ToDate.Month, DateTime.DaysInMonth(Model.ToDate.Year, Model.ToDate.Month)).ToString("yyyy-MM-dd");
 }
 
-<div class="space-y-5">
+<div class="fb4c-reports space-y-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-xs font-semibold uppercase tracking-wide text-muted">Phân tích tài chính &amp; vận hành</p>
@@ -27,7 +27,7 @@
         <a class="fb-button fb-button-primary" href="/admin/reports/revenue.csv?from=@fromIso&to=@toIso">Xuất CSV</a>
     </div>
 
-    <form class="fb-card grid gap-4 p-4 sm:grid-cols-[1fr_1fr_auto]" method="get" action="/admin/reports">
+    <form class="fb4c-filter-panel fb-card grid gap-4 p-4 sm:grid-cols-[1fr_1fr_auto]" method="get" action="/admin/reports">
         <div>
             <label class="fb-label" for="from">Từ ngày</label>
             <input class="fb-input" id="from" name="from" type="date" value="@fromIso" />

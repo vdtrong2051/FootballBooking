@@ -14,8 +14,8 @@
     };
 }
 
-<div class="space-y-5">
-    <section class="fb-card p-4">
+<div class="fb4c-schedule space-y-6">
+    <section class="fb4c-schedule-card fb-card p-4">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h1 class="text-xl font-semibold text-ink">Lịch điều phối sân bóng</h1>
@@ -61,10 +61,10 @@
         </form>
     </section>
 
-    <div class="grid gap-5 min-[1120px]:grid-cols-[1fr_360px]">
-        <section class="order-2 fb-card p-4 min-[1120px]:order-1">
+    <div class="fb4c-schedule-layout grid gap-5 min-[1120px]:grid-cols-[minmax(0,1fr)_minmax(290px,350px)]">
+        <section class="fb4c-calendar-card order-2 fb-card p-4 min-[1120px]:order-1">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="fb4c-schedule-legend flex flex-wrap items-center gap-2">
                     <span class="rounded-ui border border-amber-200 bg-amber-50 px-2 py-1 font-medium text-amber-800">Chờ cọc / đang sử dụng</span>
                     <span class="rounded-ui border border-blue-200 bg-blue-50 px-2 py-1 font-medium text-blue-800">Đã xác nhận</span>
                     <span class="rounded-ui border border-violet-200 bg-violet-50 px-2 py-1 font-medium text-violet-800">Khách đã đến</span>
@@ -74,6 +74,7 @@
                 <span class="text-muted">Mẹo: Bấm vào ô giờ trống trên lịch để tạo booking mới</span>
             </div>
 
+            <div id="fb4c-calendar-error" class="fb4c-calendar-error" hidden role="alert" aria-live="polite"></div>
             <div
                 id="admin-schedule-calendar"
                 class="min-h-[620px]"
@@ -86,7 +87,7 @@
             </div>
         </section>
 
-        <aside class="order-1 space-y-5 min-[1120px]:order-2">
+        <aside class="fb4c-ops-panel order-1 space-y-5 min-[1120px]:order-2">
             <section class="fb-card p-4">
                 <h2 class="font-semibold text-ink">Cần xử lý</h2>
                 <p class="mt-1 text-sm text-muted">Các booking cần chú ý để nhân viên không phải rời khỏi lịch sân khi bắt đầu ca làm việc.</p>
