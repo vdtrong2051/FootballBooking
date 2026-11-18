@@ -56,6 +56,7 @@ public static class DependencyInjection
 
         services.AddScoped<IFieldStore, EfFieldStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();
+        services.AddScoped<IBookingOperationsService, EfBookingOperationsService>();
         services.Configure<PaymentOptions>(configuration.GetSection(PaymentOptions.SectionName));
         services.AddScoped<IPaymentAttemptService, EfPaymentAttemptService>();
         services.AddScoped<IReportStore, EfReportStore>();

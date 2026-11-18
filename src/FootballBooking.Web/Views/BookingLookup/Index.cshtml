@@ -1,3 +1,4 @@
+@using FootballBooking.Domain.Bookings
 @model BookingLookupViewModel
 @{
     ViewData["Title"] = "Tra cứu đặt sân";
@@ -55,6 +56,21 @@
                 <div><dt class="text-muted">Còn lại</dt><dd class="font-semibold text-ink">@FormatMoney(Model.Result.RemainingAmount)</dd></div>
                 <div><dt class="text-muted">Tổng tiền</dt><dd class="font-semibold text-ink">@FormatMoney(Model.Result.TotalAmount)</dd></div>
             </dl>
+            @if (Model.Result.Session is { } play)
+            {
+                <section class="mt-5 rounded-ui border border-line p-3 text-sm">
+                    <h3 class="font-semibold">Nhật ký nhận sân</h3>
+                    <p>Check-in: @play.CheckedInAtUtc.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</p>
+                    <p>Bắt đầu thực tế: @(play.StartedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa bắt đầu")</p>
+                    <p>Kết thúc thực tế: @(play.EndedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa kết thúc")</p>
+                    <p>Quá giờ: @play.OvertimeMinutes phút · phụ phí @FormatMoney(play.OvertimeAmount)</p>
+                    <p>Quy tắc phí quá giờ: miễn @play.GraceMinutes phút, làm tròn @play.BillingStepMinutes phút theo giá @FormatMoney(play.OvertimeRatePerHour)/giờ; hệ thống chốt khi kết thúc.</p>
+                    @foreach (var charge in Model.Result.ExtraCharges ?? [])
+                    {
+                        <p>@(charge.Kind == BookingExtraChargeKind.Extension ? "Gia hạn" : "Quá giờ"): @FormatMoney(charge.Amount)</p>
+                    }
+                </section>
+            }
             @if (Model.Result.ServiceLines.Count > 0)
             {
                 <div class="mt-5 border-t border-line pt-4">

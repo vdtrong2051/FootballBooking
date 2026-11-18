@@ -143,6 +143,53 @@ namespace FootballBooking.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingSession", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
+                    b.Property<Guid>("BookingId").HasColumnType("char(36)");
+                    b.Property<int>("OriginalEndMinute").HasColumnType("int");
+                    b.Property<int>("EffectiveEndMinute").HasColumnType("int");
+                    b.Property<DateTimeOffset>("CheckedInAtUtc").HasColumnType("datetime");
+                    b.Property<Guid>("CheckedInByUserId").HasColumnType("char(36)");
+                    b.Property<string>("CheckedInByName").IsRequired().HasMaxLength(120).HasColumnType("varchar(120)");
+                    b.Property<string>("CheckedInByRole").IsRequired().HasMaxLength(16).HasColumnType("varchar(16)");
+                    b.Property<DateTimeOffset?>("StartedAtUtc").HasColumnType("datetime");
+                    b.Property<Guid?>("StartedByUserId").HasColumnType("char(36)");
+                    b.Property<string>("StartedByName").HasMaxLength(120).HasColumnType("varchar(120)");
+                    b.Property<string>("StartedByRole").HasMaxLength(16).HasColumnType("varchar(16)");
+                    b.Property<DateTimeOffset?>("EndedAtUtc").HasColumnType("datetime");
+                    b.Property<Guid?>("EndedByUserId").HasColumnType("char(36)");
+                    b.Property<string>("EndedByName").HasMaxLength(120).HasColumnType("varchar(120)");
+                    b.Property<string>("EndedByRole").HasMaxLength(16).HasColumnType("varchar(16)");
+                    b.Property<long>("OvertimeRatePerHour").HasColumnType("bigint");
+                    b.Property<int>("GraceMinutes").HasColumnType("int");
+                    b.Property<int>("BillingStepMinutes").HasColumnType("int");
+                    b.Property<int>("OvertimeMinutes").HasColumnType("int");
+                    b.Property<int>("BilledOvertimeMinutes").HasColumnType("int");
+                    b.Property<long>("OvertimeAmount").HasColumnType("bigint");
+                    b.HasKey("Id");
+                    b.HasIndex("BookingId").IsUnique();
+                    b.ToTable("BookingSessions");
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingExtraCharge", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
+                    b.Property<Guid>("BookingId").HasColumnType("char(36)");
+                    b.Property<int>("Kind").HasColumnType("int");
+                    b.Property<int>("FromMinute").HasColumnType("int");
+                    b.Property<int>("ToMinute").HasColumnType("int");
+                    b.Property<int>("BilledMinutes").HasColumnType("int");
+                    b.Property<long>("RatePerHour").HasColumnType("bigint");
+                    b.Property<long>("Amount").HasColumnType("bigint");
+                    b.Property<string>("Note").IsRequired().HasMaxLength(500).HasColumnType("varchar(500)");
+                    b.Property<Guid>("ActorUserId").HasColumnType("char(36)");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("datetime");
+                    b.HasKey("Id");
+                    b.HasIndex("BookingId", "Kind");
+                    b.ToTable("BookingExtraCharges");
+                });
+
             modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingServiceLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -939,6 +986,24 @@ namespace FootballBooking.Infrastructure.Migrations
                     b.Navigation("PromoCode");
                 });
 
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingSession", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithOne("Session")
+                        .HasForeignKey("FootballBooking.Domain.Bookings.BookingSession", "BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingExtraCharge", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithMany("ExtraCharges")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingServiceLine", b =>
                 {
                     b.HasOne("FootballBooking.Domain.Bookings.Booking", "Booking")
@@ -1084,9 +1149,13 @@ namespace FootballBooking.Infrastructure.Migrations
 
             modelBuilder.Entity("FootballBooking.Domain.Bookings.Booking", b =>
                 {
+                    b.Navigation("ExtraCharges");
+
                     b.Navigation("Payments");
 
                     b.Navigation("ServiceLines");
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("FootballBooking.Domain.Fields.Field", b =>

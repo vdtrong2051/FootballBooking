@@ -9,7 +9,7 @@
     var canStart = booking.Status == BookingStatus.CheckedIn;
     var canSettle = booking.Status == BookingStatus.InProgress;
     var canNoShow = booking.Status == BookingStatus.Confirmed;
-    var canCancel = booking.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed or BookingStatus.CheckedIn;
+    var canCancel = booking.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed;
     var depositOutstanding = Math.Max(0, Model.DepositRequiredAmount - booking.PaidAmount + booking.RefundedAmount);
     var suggestedPayment = booking.Status == BookingStatus.PendingPayment && depositOutstanding > 0
         ? Math.Min(booking.RemainingAmount, depositOutstanding)
@@ -42,6 +42,45 @@
         </div>
         <a class="fb-button fb-button-secondary justify-center" href="/admin/bookings">Quay lại danh sách</a>
     </div>
+
+    <section class="fb-card mb-5 p-4">
+        <h2 class="font-semibold text-ink">Nhật ký nhận sân và sử dụng thực tế</h2>
+        <p class="mt-1 text-xs text-muted">Khách đặt: @booking.CustomerName (@booking.CustomerPhone). Các mốc ghi theo giờ Việt Nam.</p>
+        @if (booking.Session is { } session)
+        {
+            <dl class="mt-3 grid gap-3 text-sm md:grid-cols-2">
+                <div><dt class="text-muted">Check-in thực tế</dt><dd>@session.CheckedInAtUtc.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") — @session.CheckedInByName (@session.CheckedInByRole)</dd></div>
+                <div><dt class="text-muted">Bắt đầu thực tế</dt><dd>@(session.StartedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa bắt đầu") @(session.StartedByName is null ? "" : "— " + session.StartedByName + " (" + session.StartedByRole + ")")</dd></div>
+                <div><dt class="text-muted">Kết thúc thực tế</dt><dd>@(session.EndedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa kết thúc") @(session.EndedByName is null ? "" : "— " + session.EndedByName + " (" + session.EndedByRole + ")")</dd></div>
+                <div><dt class="text-muted">Vượt giờ theo lịch hiệu lực</dt><dd>@session.OvertimeMinutes phút · tính phí @session.BilledOvertimeMinutes phút · @FormatMoney(session.OvertimeAmount)</dd></div>
+                <div><dt class="text-muted">Giờ kết thúc ban đầu / hiện tại</dt><dd>@FormatMinute(session.OriginalEndMinute) / @FormatMinute(session.EffectiveEndMinute)</dd></div>
+                <div><dt class="text-muted">Chính sách phí quá giờ (snapshot)</dt><dd>@FormatMoney(session.OvertimeRatePerHour)/giờ; miễn @session.GraceMinutes phút, làm tròn @session.BillingStepMinutes phút. Phí chốt khi nhân viên kết thúc ca.</dd></div>
+            </dl>
+        }
+        else
+        {
+            <p class="mt-2 text-sm text-muted">Chưa có check-in thực tế. Booking cũ có trạng thái vận hành nhưng thiếu nhật ký phải được xử lý riêng.</p>
+        }
+        @if (booking.ExtraCharges?.Count > 0)
+        {
+            <h3 class="mt-4 text-sm font-semibold">Các khoản phát sinh</h3>
+            @foreach (var charge in booking.ExtraCharges)
+            {
+                <p class="mt-2 text-sm">@(charge.Kind == BookingExtraChargeKind.Extension ? "Gia hạn" : "Quá giờ") — @charge.Note: <strong>@FormatMoney(charge.Amount)</strong></p>
+            }
+        }
+        @if (booking.Status is BookingStatus.CheckedIn or BookingStatus.InProgress)
+        {
+            <form class="mt-4 flex flex-wrap items-end gap-3 border-t border-line pt-4" method="post" action="/admin/bookings/@booking.Id/extend">
+                @Html.AntiForgeryToken()
+                <div><label class="fb-label" for="newEndMinute">Gia hạn đến (phút từ 00:00)</label>
+                    <input class="fb-input" id="newEndMinute" name="newEndMinute" type="number" min="@booking.EndMinute" max="1440" step="30" value="@(Math.Min(1440, booking.EndMinute + 30))" required />
+                    <p class="mt-1 text-xs text-muted">Ví dụ 19:30 = 1170. Server kiểm tra ca kế tiếp và giá trước khi gia hạn.</p>
+                </div>
+                <button class="fb-button fb-button-secondary" type="submit">Xác nhận gia hạn và cộng phí</button>
+            </form>
+        }
+    </section>
 
     @if (isClosed)
     {

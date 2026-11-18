@@ -18,6 +18,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<FieldBlock> FieldBlocks => Set<FieldBlock>();
     public DbSet<PricingRule> PricingRules => Set<PricingRule>();
     public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BookingSession> BookingSessions => Set<BookingSession>();
+    public DbSet<BookingExtraCharge> BookingExtraCharges => Set<BookingExtraCharge>();
     public DbSet<ServiceItem> Services => Set<ServiceItem>();
     public DbSet<BookingServiceLine> BookingServices => Set<BookingServiceLine>();
     public DbSet<PaymentRecord> Payments => Set<PaymentRecord>();

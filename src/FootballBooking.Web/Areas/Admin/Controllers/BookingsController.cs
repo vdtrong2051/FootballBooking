@@ -15,7 +15,8 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 [Route("admin/bookings")]
 [Authorize(Policy = "CanAccessBookings")]
 public sealed class BookingsController(IBookingService bookingService, IFieldService fieldService,
-    BookingPolicyOptions? bookingPolicy = null) : Controller
+    BookingPolicyOptions? bookingPolicy = null,
+    IBookingOperationsService? operations = null) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(string? bookingDateText, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken)
@@ -174,10 +175,13 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
 
     [HttpPost("{id:guid}/settlement/complete")]
     [Authorize(Policy = "CanManagePayments")]
+    [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteFromSettlement(Guid id, CancellationToken cancellationToken)
     {
-        var result = await bookingService.ChangeStatusAsync(id, BookingStatus.Completed, cancellationToken);
+        var result = operations is null
+            ? BookingCommandResult.Failure(["Chưa cấu hình dịch vụ vận hành."])
+            : await operations.FinishAsync(id, CurrentOperator(), cancellationToken);
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
             ? "Đã xác nhận hoàn thành lượt đặt sân."
             : string.Join(" ", result.Errors);
@@ -215,6 +219,20 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
         => await ChangeStatusAndRedirectAsync(id, BookingStatus.Completed, cancellationToken);
 
+    [HttpPost("{id:guid}/extend")]
+    [Authorize(Policy = "CanManageSchedule")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Extend(Guid id, int newEndMinute, CancellationToken cancellationToken)
+    {
+        var result = operations is null
+            ? BookingCommandResult.Failure(["Chưa cấu hình dịch vụ vận hành."])
+            : await operations.ExtendAsync(id, newEndMinute, CurrentOperator(), cancellationToken);
+        TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
+            ? "Đã gia hạn sân và cộng khoản phát sinh vào công nợ."
+            : string.Join(" ", result.Errors);
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     [HttpPost("{id:guid}/no-show")]
     [Authorize(Policy = "CanManageSchedule")]
     [ValidateAntiForgeryToken]
@@ -223,7 +241,19 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
 
     private async Task<IActionResult> ChangeStatusAndRedirectAsync(Guid id, BookingStatus targetStatus, CancellationToken cancellationToken)
     {
-        var result = await bookingService.ChangeStatusAsync(id, targetStatus, cancellationToken);
+        BookingCommandResult result;
+        if (targetStatus is BookingStatus.CheckedIn or BookingStatus.InProgress or BookingStatus.Completed)
+        {
+            result = operations is null
+                ? BookingCommandResult.Failure(["Chưa cấu hình dịch vụ vận hành."])
+                : targetStatus switch
+                {
+                    BookingStatus.CheckedIn => await operations.CheckInAsync(id, CurrentOperator(), cancellationToken),
+                    BookingStatus.InProgress => await operations.StartAsync(id, CurrentOperator(), cancellationToken),
+                    _ => await operations.FinishAsync(id, CurrentOperator(), cancellationToken)
+                };
+        }
+        else result = await bookingService.ChangeStatusAsync(id, targetStatus, cancellationToken);
         TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Succeeded
             ? "Đã cập nhật trạng thái booking."
             : string.Join(" ", result.Errors);
@@ -356,6 +386,16 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
             .Where(service => service.Quantity > 0)
             .Select(service => new BookingServiceSelectionCommand(service.ServiceId, service.Quantity))
             .ToArray();
+
+    private BookingOperator CurrentOperator()
+    {
+        var id = CurrentUserId() ?? Guid.Empty;
+        var role = User.IsInRole(ApplicationRoles.Owner) ? "Owner"
+            : User.IsInRole(ApplicationRoles.Staff) ? "Staff" : string.Empty;
+        var name = (User.Identity?.Name ?? role).Trim();
+        if (name.Length > 120) name = name[..120];
+        return new BookingOperator(id, name, role);
+    }
 
     private Guid? CurrentUserId()
     {

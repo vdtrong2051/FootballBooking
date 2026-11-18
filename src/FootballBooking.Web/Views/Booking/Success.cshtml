@@ -1,3 +1,4 @@
+@using FootballBooking.Domain.Bookings
 @model BookingSuccessViewModel
 @{
     ViewData["Title"] = "Đã nhận yêu cầu đặt sân";
@@ -25,6 +26,22 @@
             <div><dt class="text-muted">Tiền cọc cần để xác nhận</dt><dd class="font-semibold text-brand-900">@FormatMoney(Model.DepositRequiredAmount)</dd></div>
         </dl>
 
+        @if (Model.Booking.Session is { } play)
+        {
+            <div class="mt-5 rounded-ui border border-line p-4 text-sm">
+                <h2 class="font-semibold text-ink">Thời gian sử dụng và chi phí thực tế</h2>
+                <p class="mt-2">Check-in: @play.CheckedInAtUtc.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</p>
+                <p>Bắt đầu: @(play.StartedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa bắt đầu")</p>
+                <p>Kết thúc: @(play.EndedAtUtc?.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm") ?? "Chưa kết thúc")</p>
+                <p>Phụ phí quá giờ: @FormatMoney(play.OvertimeAmount)</p>
+                <p>Thông báo phí: miễn @play.GraceMinutes phút; mỗi @play.BillingStepMinutes phút tiếp theo tính theo giá @FormatMoney(play.OvertimeRatePerHour)/giờ, chốt khi kết thúc ca.</p>
+                @foreach (var charge in Model.Booking.ExtraCharges ?? [])
+                {
+                    <p>@(charge.Kind == BookingExtraChargeKind.Extension ? "Gia hạn" : "Quá giờ"): @FormatMoney(charge.Amount)</p>
+                }
+                <p class="mt-2 font-semibold">Tổng sau phát sinh: @FormatMoney(Model.Booking.TotalAmount) — Còn thu: @FormatMoney(Model.Booking.RemainingAmount)</p>
+            </div>
+        }
         <div class="mt-5 rounded-ui border border-brand-200 bg-brand-50/60 p-4">
             <h2 class="text-sm font-semibold text-ink">Hướng dẫn thanh toán qua @BookingLabels.PaymentMethod(selectedMethod)</h2>
             <p class="mt-1 text-sm text-muted">

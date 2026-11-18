@@ -36,6 +36,7 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .OnDelete(DeleteBehavior.SetNull);
         builder.Navigation(booking => booking.ServiceLines).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(booking => booking.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(booking => booking.ExtraCharges).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.ToTable(table =>
         {

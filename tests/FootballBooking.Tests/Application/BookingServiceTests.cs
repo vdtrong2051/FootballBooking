@@ -356,7 +356,7 @@ public sealed class BookingServiceTests
     }
 
     [Fact]
-    public async Task ChangeStatusAsync_WhenOperationalFlowIsValid_ProgressesToCompleted()
+    public async Task ChangeStatusAsync_OperationalTransitions_RequireOperationsService()
     {
         var field = CreateField();
         var store = new InMemoryBookingStore(field);
@@ -364,11 +364,10 @@ public sealed class BookingServiceTests
         store.Bookings.Add(booking);
         var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
 
-        Assert.True((await service.ChangeStatusAsync(booking.Id, BookingStatus.CheckedIn)).Succeeded);
-        Assert.True((await service.ChangeStatusAsync(booking.Id, BookingStatus.InProgress)).Succeeded);
-        Assert.True((await service.ChangeStatusAsync(booking.Id, BookingStatus.Completed)).Succeeded);
-
-        Assert.Equal(BookingStatus.Completed, booking.Status);
+        var result = await service.ChangeStatusAsync(booking.Id, BookingStatus.CheckedIn);
+        Assert.False(result.Succeeded);
+        Assert.Equal(BookingStatus.Confirmed, booking.Status);
+        Assert.Contains("Trạng thái vận hành phải thực hiện qua IBookingOperationsService", result.Errors[0]);
     }
 
     [Fact]
@@ -383,7 +382,7 @@ public sealed class BookingServiceTests
         var result = await service.ChangeStatusAsync(booking.Id, BookingStatus.InProgress);
 
         Assert.False(result.Succeeded);
-        Assert.Contains("Không thể chuyển booking sang trạng thái đã chọn.", result.Errors);
+        Assert.Contains("Trạng thái vận hành phải thực hiện qua IBookingOperationsService", result.Errors[0]);
         Assert.Equal(BookingStatus.Completed, booking.Status);
     }
 

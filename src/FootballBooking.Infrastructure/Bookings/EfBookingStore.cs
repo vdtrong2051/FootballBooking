@@ -225,7 +225,10 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
             .Include(booking => booking.Field)
             .ThenInclude(field => field.PricingRules)
             .Include(booking => booking.ServiceLines)
-            .Include(booking => booking.Payments);
+            .Include(booking => booking.Payments)
+            .Include(booking => booking.Session)
+            .Include(booking => booking.ExtraCharges)
+            .AsSplitQuery();
 
     private static BookingSummaryDto ToSummaryDto(Booking booking)
         => new(
@@ -280,5 +283,19 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
                 .OrderByDescending(payment => payment.CreatedAtUtc)
                 .Select(payment => new PaymentRecordDto(payment.Id, payment.PaymentType, payment.Method, payment.Amount, payment.Status, payment.TransactionCode, payment.Note, payment.ProcessedAtUtc, payment.CreatedAtUtc))
                 .ToArray(),
-            booking.CustomerUserId);
+            booking.CustomerUserId,
+            booking.Session is null ? null : new BookingSessionDto(
+                booking.Session.OriginalEndMinute, booking.Session.EffectiveEndMinute,
+                booking.Session.CheckedInAtUtc, booking.Session.CheckedInByName,
+                booking.Session.CheckedInByRole, booking.Session.StartedAtUtc,
+                booking.Session.StartedByName, booking.Session.StartedByRole,
+                booking.Session.EndedAtUtc, booking.Session.EndedByName,
+                booking.Session.EndedByRole, booking.Session.OvertimeMinutes,
+                booking.Session.BilledOvertimeMinutes, booking.Session.OvertimeAmount,
+                booking.Session.OvertimeRatePerHour, booking.Session.GraceMinutes,
+                booking.Session.BillingStepMinutes),
+            booking.ExtraCharges.OrderBy(x => x.CreatedAtUtc)
+                .Select(x => new BookingExtraChargeDto(x.Id, x.Kind, x.FromMinute,
+                    x.ToMinute, x.BilledMinutes, x.Amount, x.Note, x.CreatedAtUtc))
+                .ToArray());
 }

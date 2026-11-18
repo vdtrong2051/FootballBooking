@@ -460,6 +460,9 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(["Không tìm thấy booking."]);
         }
 
+        if (targetStatus is BookingStatus.CheckedIn or BookingStatus.InProgress or BookingStatus.Completed)
+            return BookingCommandResult.Failure(["Trạng thái vận hành phải thực hiện qua IBookingOperationsService để ghi giờ và phí thực tế."]);
+
         var now = clock.UtcNow;
         // Any transition from a hold to Confirmed must share the booking creation lock.
         await using var confirmationLock = targetStatus == BookingStatus.Confirmed

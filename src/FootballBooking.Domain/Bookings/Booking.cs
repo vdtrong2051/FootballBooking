@@ -6,6 +6,7 @@ public sealed class Booking
 {
     private readonly List<BookingServiceLine> _serviceLines = [];
     private readonly List<PaymentRecord> _payments = [];
+    private readonly List<BookingExtraCharge> _extraCharges = [];
 
     private Booking()
     {
@@ -149,6 +150,8 @@ public sealed class Booking
     public string? CancellationReason { get; private set; }
     public IReadOnlyCollection<BookingServiceLine> ServiceLines => _serviceLines;
     public IReadOnlyCollection<PaymentRecord> Payments => _payments;
+    public BookingSession? Session { get; private set; }
+    public IReadOnlyCollection<BookingExtraCharge> ExtraCharges => _extraCharges;
 
     public bool BlocksAvailability(DateTimeOffset utcNow)
         => Status is BookingStatus.Confirmed or BookingStatus.CheckedIn or BookingStatus.InProgress
@@ -210,6 +213,25 @@ public sealed class Booking
         }
 
         Status = BookingStatus.Completed;
+        UpdatedAtUtc = utcNow;
+    }
+
+    /// <summary>Extend reserved interval; extra financial lines are recorded separately.</summary>
+    public void ExtendTo(int newEndMinute, DateTimeOffset utcNow)
+    {
+        if (Status is not (BookingStatus.CheckedIn or BookingStatus.InProgress)
+            || newEndMinute <= EndMinute || newEndMinute > 1440)
+            throw new InvalidOperationException("Only an active, checked-in booking can be extended.");
+        EndMinute = newEndMinute;
+        UpdatedAtUtc = utcNow;
+    }
+
+    public void AddOperationalCharge(long amount, DateTimeOffset utcNow)
+    {
+        if (amount < 0 || Status is not (BookingStatus.CheckedIn or BookingStatus.InProgress))
+            throw new InvalidOperationException("Cannot add charge to inactive booking.");
+        TotalAmount = checked(TotalAmount + amount);
+        RecalculatePaymentStatus();
         UpdatedAtUtc = utcNow;
     }
 
@@ -279,7 +301,8 @@ public sealed class Booking
 
     public void Cancel(DateTimeOffset utcNow, string? reason = null, long cancellationFeeAmount = 0)
     {
-        if (Status is BookingStatus.Completed or BookingStatus.Cancelled or BookingStatus.NoShow or BookingStatus.Expired)
+        if (Status is BookingStatus.Completed or BookingStatus.Cancelled or BookingStatus.NoShow
+            or BookingStatus.Expired or BookingStatus.CheckedIn or BookingStatus.InProgress)
         {
             return;
         }

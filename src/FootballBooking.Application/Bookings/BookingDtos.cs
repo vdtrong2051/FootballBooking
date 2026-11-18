@@ -109,6 +109,19 @@ public sealed record BookingSummaryDto(
     DateTimeOffset CreatedAtUtc,
     Guid? FieldId = null);
 
+public sealed record BookingSessionDto(
+    int OriginalEndMinute,
+    int EffectiveEndMinute,
+    DateTimeOffset CheckedInAtUtc, string CheckedInByName, string CheckedInByRole,
+    DateTimeOffset? StartedAtUtc, string? StartedByName, string? StartedByRole,
+    DateTimeOffset? EndedAtUtc, string? EndedByName, string? EndedByRole,
+    int OvertimeMinutes, int BilledOvertimeMinutes, long OvertimeAmount,
+    long OvertimeRatePerHour, int GraceMinutes, int BillingStepMinutes);
+
+public sealed record BookingExtraChargeDto(
+    Guid Id, BookingExtraChargeKind Kind, int FromMinute, int ToMinute,
+    int BilledMinutes, long Amount, string Note, DateTimeOffset CreatedAtUtc);
+
 public sealed record BookingDetailDto(
     Guid Id,
     string BookingCode,
@@ -139,7 +152,9 @@ public sealed record BookingDetailDto(
     IReadOnlyList<PricingSegmentDto> PriceSegments,
     IReadOnlyList<BookingServiceLineDto> ServiceLines,
     IReadOnlyList<PaymentRecordDto> Payments,
-    Guid? CustomerUserId = null)
+    Guid? CustomerUserId = null,
+    BookingSessionDto? Session = null,
+    IReadOnlyList<BookingExtraChargeDto>? ExtraCharges = null)
 {
     public long RemainingAmount => Math.Max(0, TotalAmount - PaidAmount + RefundedAmount);
 
