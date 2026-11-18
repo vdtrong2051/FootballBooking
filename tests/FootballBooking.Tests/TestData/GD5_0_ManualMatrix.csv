@@ -1,0 +1,27 @@
+Id,Stage,Case,Expected,CurrentClassification,Verification
+BK-01,GD5-A,Two clients book same field/time,Only one succeeds,ExistingServerGuard,ManualTwoBrowsers
+BK-02,GD5-A,Second client opens a fresh booking page,Unavailable slot is visible,NeedsRuntimeReproduction,ManualTwoBrowsers
+BK-03,GD5-A,Second client keeps old booking page,Availability refreshes when another client books,KnownFrontendGap,ManualTwoBrowsers
+BK-04,GD5-A,Pending hold expires,Slot becomes available,ExistingDomainGuard,UnitAndIntegration
+BK-05,GD5-A,Partial payment below minimum deposit,Booking is not confirmed,MissingDepositPolicy,FutureTest
+BK-06,GD5-A,Deposit reaches configured minimum,Booking is confirmed once,MissingDepositPolicy,FutureTest
+BK-07,GD5-A,Repeated reference on different bookings,Payment not double-counted,NeedsCrossBookingAudit,FutureTest
+BK-08,GD5-A,Replay LAN QR confirmation,Payment confirmation is idempotent,NeedsLiveLanTest,ManualAndIntegration
+BK-09,GD5-B,Check in before allowed window,Server rejects premature check in,MissingTimeWindowRule,FutureTest
+BK-10,GD5-B,Staff checks in customer,Store exact UTC timestamp and staff identity,MissingOperationTimestamps,FutureTest
+BK-11,GD5-B,Customer stays overtime,Show charge with configured policy,MissingOvertimePolicy,FutureTest
+BK-12,GD5-B,Extension overlaps next booking,Extension is rejected,MissingExtensionFlow,FutureTest
+BK-13,GD5-C,Owner blocks field with confirmed booking,Owner sees conflict and cannot silently override,NeedsBlockingGuard,FutureTest
+BK-14,GD5-D,Guest looks up booking,Only verified booking disclosed,ExistingLimitedLookup,ManualSecurity
+BK-15,GD5-D,Customer accesses someone else's booking,Request denied,ExistingOwnershipGuard,Integration
+BK-16,GD5-D,Payment-only staff manages fields,Request denied,ExistingPermissionGuard,Integration
+BK-17,GD5-E,Cancel booking after deposit,Fee and refund reconciled,PartialExistingFlow,FutureTest
+BK-18,GD5-E,Complete booking with debt,Debt shown and never silently cleared,ExistingDebtTracking,Integration
+BK-19,GD5-C,Fields grouped into areas A/B,Correct totals and available counts,MissingZoneModel,FutureTest
+BK-20,GD5-E,End-of-day payment reconciliation,Separate real from LAN simulated money,NeedsSimulationSeparation,FutureTest
+BK-21,GD5-D,Registered customer rebooks a prior field,Data prefilled with new date,MissingRebookFlow,FutureTest
+BK-22,GD5-D,Registered customer reschedules,Conflict and price delta checked,MissingSelfServiceReschedule,FutureTest
+BK-23,GD5-D,Recurring bookings with one conflicting week,No unconditional block on all weeks,MissingRecurringFlow,FutureTest
+BK-24,GD5-D,Guest booking matches registered customer's phone,Do not auto-link ownership,ExistingOwnershipGuard,UnitAndIntegration
+BK-25,GD5-E,Staff changes status,Audit actor and timestamp retained,MissingFullAudit,FutureTest
+BK-26,GD5-A,Public availability response,Do not leak booking owner or phone,ExistingAvailabilityDTO,Integration

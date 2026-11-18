@@ -54,9 +54,14 @@ public sealed class PaymentAttemptTests
     {
         var config = new PaymentOptions
         {
-            BankBin = "970436", AccountNumber = "123456789", AccountName = "SAN BONG ABC"
+            BankBin = "970436",
+            AccountNumber = "123456789",
+            AccountName = "SAN BONG ABC",
+            EnableRealBankQr = true
         };
+
         var qr = VietQrInstructions.BuildImageUrl(config, Create());
+
         Assert.NotNull(qr);
         Assert.Contains("img.vietqr.io/image/970436-123456789-compact2.png", qr);
         Assert.Contains("amount=250000", qr);
