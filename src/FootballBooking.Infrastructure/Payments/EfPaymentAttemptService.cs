@@ -28,8 +28,12 @@ public sealed class EfPaymentAttemptService(
         if ((method is PaymentMethod.MoMo or PaymentMethod.ZaloPay)
             && (!environment.IsDevelopment() || !options.Value.EnableDemoGateway))
             return PaymentAttemptResult.Fail("Ví điện tử chưa được kết nối; chỉ hỗ trợ sandbox nội bộ khi bật chế độ demo.");
-        if ((method is PaymentMethod.VietQr or PaymentMethod.BankTransfer) && !options.Value.HasBankAccount)
-            return PaymentAttemptResult.Fail("Chưa cấu hình thông tin ngân hàng để sinh VietQR.");
+        var isLanDemo = environment.IsDevelopment() && options.Value.EnableLanDemo
+            && method == PaymentMethod.VietQr;
+        var realBankEnabled = !environment.IsDevelopment() && options.Value.EnableRealBankQr
+            && options.Value.HasBankAccount;
+        if ((method is PaymentMethod.VietQr or PaymentMethod.BankTransfer) && !isLanDemo && !realBankEnabled)
+            return PaymentAttemptResult.Fail("Chưa bật thanh toán ngân hàng thật hoặc QR TEST LAN.");
 
         var referenceBooking = await db.Bookings.AsNoTracking()
             .Where(x => x.Id == bookingId)
@@ -90,15 +94,29 @@ public sealed class EfPaymentAttemptService(
         return attempts.Select(x => ToDto(x, booking.BookingCode)).ToArray();
     }
 
-    public async Task<IReadOnlyList<PaymentAttemptDto>> ListRecentAsync(int count = 100, CancellationToken ct = default)
+    public async Task<IReadOnlyList<PaymentAttemptDto>> ListRecentAsync(
+        int count = 100,
+        CancellationToken ct = default)
     {
         count = Math.Clamp(count, 1, 200);
-        var attempts = await db.PaymentAttempts.AsNoTracking()
-            .OrderByDescending(x => x.CreatedAtUtc).Take(count).ToListAsync(ct);
-        var bookingIds = attempts.Select(x => x.BookingId).Distinct().ToArray();
-        var codes = await db.Bookings.AsNoTracking().Where(x => bookingIds.Contains(x.Id))
-            .ToDictionaryAsync(x => x.Id, x => x.BookingCode, ct);
-        return attempts.Select(x => ToDto(x, codes.GetValueOrDefault(x.BookingId) ?? "—")).ToArray();
+
+        var rows = await (
+            from attempt in db.PaymentAttempts.AsNoTracking()
+            join booking in db.Bookings.AsNoTracking()
+                on attempt.BookingId equals booking.Id
+            orderby attempt.CreatedAtUtc descending
+            select new
+            {
+                Attempt = attempt,
+                booking.BookingCode
+            }
+        )
+        .Take(count)
+        .ToListAsync(ct);
+
+        return rows
+            .Select(row => ToDto(row.Attempt, row.BookingCode))
+            .ToArray();
     }
 
     /// <summary>Must be invoked only after trusted manual verification or authenticated demo webhook.</summary>
@@ -166,8 +184,11 @@ public sealed class EfPaymentAttemptService(
             return PaymentAttemptResult.Ok(ToDto(attempt, booking.BookingCode));
         }
 
+        var receiptNote = environment.IsDevelopment() && reference.StartsWith("LAN-DEMO-", StringComparison.Ordinal)
+            ? "DEMO LAN: mô phỏng thanh toán, không có giao dịch ngân hàng thật."
+            : "GĐ2: xác nhận dựa trên chứng từ đã kiểm tra";
         var payment = booking.RecordPayment(PaymentRecordType.Payment, attempt.Method, receivedAmount,
-            PaymentRecordStatus.Succeeded, reference, "GĐ2: xác nhận dựa trên chứng từ đã kiểm tra",
+            PaymentRecordStatus.Succeeded, reference, receiptNote,
             actorId, now);
         db.Payments.Add(payment);
         booking.Confirm(now);

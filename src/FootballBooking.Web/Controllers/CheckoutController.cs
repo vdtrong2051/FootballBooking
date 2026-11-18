@@ -5,6 +5,8 @@ using FootballBooking.Domain.Bookings;
 using FootballBooking.Domain.Payments;
 using FootballBooking.Infrastructure.Payments;
 using FootballBooking.Web.ViewModels.Payments;
+using FootballBooking.Web.Payments;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -15,7 +17,8 @@ public sealed class CheckoutController(
     IBookingService bookings,
     IPaymentAttemptService attempts,
     IOptions<PaymentOptions> options,
-    IWebHostEnvironment environment) : Controller
+    IWebHostEnvironment environment,
+    IDataProtectionProvider protection) : Controller
 {
     [HttpGet("{code}")]
     public async Task<IActionResult> Index(string code, CancellationToken ct)
@@ -27,22 +30,39 @@ public sealed class CheckoutController(
         var config = options.Value;
         var latest = history.FirstOrDefault(x => x.Status == PaymentAttemptStatus.Pending
             && x.ExpiresAtUtc > DateTimeOffset.UtcNow);
+        // DEV: never generate a bank-transfer QR. The LAN QR contains only a
+        // time-limited URL for the simulated checkout on this machine.
+        string lanBase = string.Empty;
+        var lanDemo = environment.IsDevelopment() && config.EnableLanDemo
+            && LanDemoPaymentToken.TryGetPrivateLanBase(config.LanBaseUrl, out lanBase);
         string? qr = null;
+        string? lanDemoUrl = null;
         if (latest is not null && latest.Method == PaymentMethod.VietQr)
         {
-            // Purely construct a VietQR Quick Link; do not imply money has arrived.
-            qr = VietQrInstructions.BuildImageUrl(config,
-                new PaymentAttempt(latest.Id, latest.BookingId, latest.Method,
-                    latest.Amount, latest.RequestCode, latest.ExpiresAtUtc, latest.CreatedAtUtc));
+            if (lanDemo)
+            {
+                var token = LanDemoPaymentToken.Protect(protection,
+                    new LanDemoPaymentToken.Payload(latest.Id, latest.BookingId,
+                        latest.Amount, latest.RequestCode), latest.ExpiresAtUtc);
+                lanDemoUrl = $"{lanBase}/dev/lan-pay/{latest.Id:D}?token={Uri.EscapeDataString(token)}";
+            }
+            else if (!environment.IsDevelopment() && config.EnableRealBankQr && config.HasBankAccount)
+            {
+                qr = VietQrInstructions.BuildImageUrl(config,
+                    new PaymentAttempt(latest.Id, latest.BookingId, latest.Method,
+                        latest.Amount, latest.RequestCode, latest.ExpiresAtUtc, latest.CreatedAtUtc));
+            }
         }
         return View(new CheckoutPageViewModel
         {
             Booking = booking,
             Attempts = history,
             VietQrImageUrl = qr,
-            BankConfigured = config.HasBankAccount,
-            BankAccountName = config.HasBankAccount ? config.AccountName : null,
-            BankAccountNumber = config.HasBankAccount ? config.AccountNumber : null,
+            LanDemoUrl = lanDemoUrl,
+            EnableLanDemo = lanDemo,
+            BankConfigured = !environment.IsDevelopment() && config.EnableRealBankQr && config.HasBankAccount,
+            BankAccountName = !environment.IsDevelopment() && config.EnableRealBankQr && config.HasBankAccount ? config.AccountName : null,
+            BankAccountNumber = !environment.IsDevelopment() && config.EnableRealBankQr && config.HasBankAccount ? config.AccountNumber : null,
             EnableDemoGateway = environment.IsDevelopment() && config.EnableDemoGateway
         });
     }

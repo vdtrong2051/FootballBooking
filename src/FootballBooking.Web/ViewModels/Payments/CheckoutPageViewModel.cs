@@ -9,6 +9,8 @@ public sealed class CheckoutPageViewModel
     public required BookingDetailDto Booking { get; init; }
     public IReadOnlyList<PaymentAttemptDto> Attempts { get; init; } = [];
     public string? VietQrImageUrl { get; init; }
+    public string? LanDemoUrl { get; init; }
+    public bool EnableLanDemo { get; init; }
     public bool BankConfigured { get; init; }
     public string? BankAccountNumber { get; init; }
     public string? BankAccountName { get; init; }

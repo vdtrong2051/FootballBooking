@@ -9,10 +9,10 @@
   },
   "scripts": {
     "css:dev": "tailwindcss -i ./src/FootballBooking.Web/Styles/input.css -o ./src/FootballBooking.Web/wwwroot/css/site.css --watch",
-    "js:dev": "esbuild ./src/FootballBooking.Web/Scripts/site.js ./src/FootballBooking.Web/Scripts/admin-schedule.js ./src/FootballBooking.Web/Scripts/admin-reports.js --bundle --format=iife --sourcemap --outdir=./src/FootballBooking.Web/wwwroot/js --watch",
+    "js:dev": "esbuild ./src/FootballBooking.Web/Scripts/site.js ./src/FootballBooking.Web/Scripts/admin-schedule.js ./src/FootballBooking.Web/Scripts/admin-reports.js ./src/FootballBooking.Web/Scripts/lan-demo-qr.js --bundle --format=iife --sourcemap --outdir=./src/FootballBooking.Web/wwwroot/js --watch",
     "dev": "concurrently \"npm:css:dev\" \"npm:js:dev\"",
     "css:build": "tailwindcss -i ./src/FootballBooking.Web/Styles/input.css -o ./src/FootballBooking.Web/wwwroot/css/site.css --minify",
-    "js:build": "esbuild ./src/FootballBooking.Web/Scripts/site.js ./src/FootballBooking.Web/Scripts/admin-schedule.js ./src/FootballBooking.Web/Scripts/admin-reports.js --bundle --format=iife --minify --outdir=./src/FootballBooking.Web/wwwroot/js",
+    "js:build": "esbuild ./src/FootballBooking.Web/Scripts/site.js ./src/FootballBooking.Web/Scripts/admin-schedule.js ./src/FootballBooking.Web/Scripts/admin-reports.js ./src/FootballBooking.Web/Scripts/lan-demo-qr.js --bundle --format=iife --minify --outdir=./src/FootballBooking.Web/wwwroot/js",
     "build": "npm run css:build && npm run js:build"
   },
   "keywords": [],
