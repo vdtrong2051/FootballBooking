@@ -13,11 +13,13 @@ namespace FootballBooking.Web.Controllers;
 public sealed class BookingController(
     IBookingService bookingService,
     IFieldService fieldService,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    BookingPolicyOptions? bookingPolicy = null) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute, int? durationMinutes, CancellationToken cancellationToken)
     {
+        Response.Headers.CacheControl = "no-store";
         var model = new BookingCreateViewModel();
         await PopulateCreateModelAsync(model, cancellationToken);
         await PopulateAuthenticatedCustomerAsync(model);
@@ -142,7 +144,11 @@ public sealed class BookingController(
         if (!loggedInOwner && !sameBrowserNewBooking)
             return RedirectToAction("Index", "BookingLookup");
         Response.Headers.CacheControl = "no-store";
-        return View(new BookingSuccessViewModel { Booking = booking });
+        return View(new BookingSuccessViewModel
+        {
+            Booking = booking,
+            DepositRequiredAmount = BookingDepositPolicy.RequiredAmount(booking.TotalAmount, bookingPolicy ?? new BookingPolicyOptions())
+        });
     }
 
     [HttpPost("{code}/cancel")]

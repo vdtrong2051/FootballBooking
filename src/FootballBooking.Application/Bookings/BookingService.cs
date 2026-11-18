@@ -67,10 +67,12 @@ public sealed class BookingService(
         var subtotal = (price?.CourtAmount ?? 0) + services.ServiceAmount;
         var promotion = await CalculatePromotionAsync(command, subtotal, cancellationToken);
         errors.AddRange(promotion.Errors);
+        var total = Math.Max(0, subtotal - promotion.DiscountAmount);
         return new BookingPricePreviewDto(
             errors.Count == 0, price?.CourtAmount ?? 0, services.ServiceAmount,
-            promotion.DiscountAmount, Math.Max(0, subtotal - promotion.DiscountAmount),
-            price?.Segments ?? [], errors);
+            promotion.DiscountAmount, total,
+            price?.Segments ?? [], errors)
+        { DepositRequiredAmount = BookingDepositPolicy.RequiredAmount(total, _policy) };
     }
 
     public async Task<PricingQuoteDto?> GetPricingQuoteAsync(Guid fieldId, DateOnly bookingDate, int startMinute, int endMinute, CancellationToken cancellationToken = default)
@@ -314,9 +316,9 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(promotionResult.Errors);
         }
 
-        var status = command.Source is BookingSource.GuestWeb or BookingSource.CustomerAccount
-            ? BookingStatus.PendingPayment
-            : BookingStatus.Confirmed;
+        // All sources, including Staff/Owner, must meet the same deposit gate.
+        // Explicit exemptions require a separately audited policy (not present in GĐ5-A).
+        var status = BookingStatus.PendingPayment;
         DateTimeOffset? expiresAtUtc = status == BookingStatus.PendingPayment ? now.AddMinutes(HoldMinutes) : null;
         var bookingCode = await GenerateBookingCodeAsync(command.BookingDate, cancellationToken);
         var effectiveNote = BuildBookingNote(command.Note, command.PreferredPaymentMethod);
@@ -467,7 +469,7 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(["Sân đang được xử lý. Vui lòng thử lại."]);
         if (targetStatus == BookingStatus.Confirmed)
         {
-            booking = await store.GetBookingForUpdateAsync(id, cancellationToken) ?? booking;
+            booking = await store.GetBookingForPaymentAsync(id, cancellationToken) ?? booking;
             if (booking.ExpireIfNeeded(now))
             {
                 await store.SaveChangesAsync(cancellationToken);
@@ -477,6 +479,10 @@ public sealed class BookingService(
             if (conflicts.Any(other => other.Id != booking.Id && other.BlocksAvailability(now)
                 && other.Overlaps(booking.BookingDate, booking.StartMinute, booking.EndMinute)))
                 return BookingCommandResult.Failure(["Khung giờ đã được booking khác giữ hoặc xác nhận."]);
+            var outstanding = BookingDepositPolicy.OutstandingToConfirm(booking.TotalAmount,
+                booking.PaidAmount, booking.RefundedAmount, _policy);
+            if (outstanding > 0)
+                return BookingCommandResult.Failure([$"Chưa đủ tiền cọc. Cần thu thêm {outstanding:N0} đ trước khi xác nhận."]);
         }
         var previousStatus = booking.Status;
         switch (targetStatus)
@@ -544,6 +550,12 @@ public sealed class BookingService(
         }
         if (booking.Status is BookingStatus.Cancelled or BookingStatus.Expired or BookingStatus.NoShow)
             return BookingCommandResult.Failure(["Không thể ghi nhận thanh toán cho booking ở trạng thái hiện tại."]);
+        var netReceived = booking.PaidAmount - booking.RefundedAmount;
+        if (command.PaymentType == PaymentRecordType.Payment
+            && command.Amount > Math.Max(0, booking.TotalAmount - netReceived))
+            return BookingCommandResult.Failure(["Số tiền vượt quá công nợ còn lại của booking."]);
+        if (command.PaymentType == PaymentRecordType.Refund && command.Amount > netReceived)
+            return BookingCommandResult.Failure(["Số tiền hoàn vượt quá khoản đã thu thực tế."]);
         if (command.PaymentType == PaymentRecordType.Payment && booking.Status == BookingStatus.PendingPayment)
         {
             var conflicts = await store.ListBookingsForFieldDateAsync(booking.FieldId, booking.BookingDate, cancellationToken);
@@ -552,13 +564,13 @@ public sealed class BookingService(
                 return BookingCommandResult.Failure(["Khung giờ đã được booking khác giữ hoặc xác nhận."]);
         }
         if (!string.IsNullOrWhiteSpace(command.TransactionCode)
-            && booking.Payments.Any(existing => existing.PaymentType == command.PaymentType
-                && existing.Status == PaymentRecordStatus.Succeeded
-                && existing.TransactionCode == command.TransactionCode))
+            && await store.SuccessfulPaymentReferenceExistsAsync(command.TransactionCode.Trim(), cancellationToken))
             return BookingCommandResult.Failure(["Mã giao dịch này đã được ghi nhận."]);
         var payment = booking.RecordPayment(command.PaymentType, command.Method, command.Amount, PaymentRecordStatus.Succeeded, command.TransactionCode, command.Note, command.RecordedByUserId, now);
         await store.AddPaymentAsync(payment, cancellationToken);
-        if (command.PaymentType == PaymentRecordType.Payment && booking.Status == BookingStatus.PendingPayment)
+        if (command.PaymentType == PaymentRecordType.Payment && booking.Status == BookingStatus.PendingPayment
+            && BookingDepositPolicy.OutstandingToConfirm(booking.TotalAmount,
+                booking.PaidAmount, booking.RefundedAmount, _policy) == 0)
         {
             booking.Confirm(now);
         }

@@ -30,5 +30,6 @@ public interface IBookingStore
     Task AddPaymentAsync(PaymentRecord payment, CancellationToken cancellationToken);
     Task AddPromotionUsageAsync(PromoCodeUsage usage, CancellationToken cancellationToken);
     Task<bool> BookingCodeExistsAsync(string bookingCode, CancellationToken cancellationToken);
+    Task<bool> SuccessfulPaymentReferenceExistsAsync(string transactionCode, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }

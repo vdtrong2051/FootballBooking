@@ -76,7 +76,7 @@
             <section class="fb-card p-5">
                 <h2 class="font-semibold text-ink">2. Hướng dẫn thanh toán đang chờ</h2>
                 <p class="mt-2 text-sm text-muted">Phương thức: @(Model.EnableLanDemo && active.Method == PaymentMethod.VietQr ? "QR TEST nội bộ (không chuyển tiền)" : FootballBooking.Web.ViewModels.Payments.CheckoutPageViewModel.MethodName(active.Method))</p>
-                <p class="mt-2 text-base font-semibold text-brand-900">Số tiền: @Money(active.Amount)</p>
+                <p class="mt-2 text-base font-semibold text-brand-900">Số tiền cọc của lần thanh toán này: @Money(active.Amount)</p>
                 <p class="mt-2 text-sm">Mã tham chiếu: <code class="font-semibold">@active.RequestCode</code></p>
                 @if (active.Method == PaymentMethod.VietQr && Model.EnableLanDemo && Model.LanDemoUrl is not null)
                 {
@@ -132,7 +132,9 @@
                 <div class="flex justify-between gap-3"><dt class="text-muted">Ngày chơi</dt><dd>@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-muted">Khung giờ</dt><dd>@Minute(Model.Booking.StartMinute) - @Minute(Model.Booking.EndMinute)</dd></div>
                 <div class="border-t border-line pt-3 flex justify-between gap-3 font-semibold"><dt>Tổng tiền</dt><dd>@Money(Model.Booking.TotalAmount)</dd></div>
-                <div class="flex justify-between gap-3"><dt>Đã ghi nhận</dt><dd>@Money(Model.Booking.PaidAmount)</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-muted">Cọc cần để xác nhận</dt><dd class="font-semibold">@Money(Model.DepositRequiredAmount)</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-muted">Cọc còn thiếu</dt><dd class="font-semibold text-amber-800">@Money(Math.Max(0, Model.DepositRequiredAmount - Model.Booking.PaidAmount + Model.Booking.RefundedAmount))</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-muted">Đã ghi nhận</dt><dd>@Money(Model.Booking.PaidAmount)</dd></div>
                 <div class="flex justify-between gap-3 text-brand-900 font-semibold"><dt>Còn lại</dt><dd>@Money(Model.Booking.RemainingAmount)</dd></div>
             </dl>
         </section>

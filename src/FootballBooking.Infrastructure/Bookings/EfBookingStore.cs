@@ -206,6 +206,10 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
     public Task<bool> BookingCodeExistsAsync(string bookingCode, CancellationToken cancellationToken)
         => dbContext.Bookings.AnyAsync(booking => booking.BookingCode == bookingCode, cancellationToken);
 
+    public Task<bool> SuccessfulPaymentReferenceExistsAsync(string transactionCode, CancellationToken cancellationToken)
+        => dbContext.Payments.AnyAsync(payment => payment.TransactionCode == transactionCode
+            && payment.Status == PaymentRecordStatus.Succeeded, cancellationToken);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken)
         => dbContext.SaveChangesAsync(cancellationToken);
 

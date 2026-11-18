@@ -18,7 +18,8 @@ public sealed class CheckoutController(
     IPaymentAttemptService attempts,
     IOptions<PaymentOptions> options,
     IWebHostEnvironment environment,
-    IDataProtectionProvider protection) : Controller
+    IDataProtectionProvider protection,
+    BookingPolicyOptions? bookingPolicy = null) : Controller
 {
     [HttpGet("{code}")]
     public async Task<IActionResult> Index(string code, CancellationToken ct)
@@ -56,6 +57,7 @@ public sealed class CheckoutController(
         return View(new CheckoutPageViewModel
         {
             Booking = booking,
+            DepositRequiredAmount = BookingDepositPolicy.RequiredAmount(booking.TotalAmount, bookingPolicy ?? new BookingPolicyOptions()),
             Attempts = history,
             VietQrImageUrl = qr,
             LanDemoUrl = lanDemoUrl,

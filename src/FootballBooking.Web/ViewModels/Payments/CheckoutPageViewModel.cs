@@ -7,6 +7,7 @@ namespace FootballBooking.Web.ViewModels.Payments;
 public sealed class CheckoutPageViewModel
 {
     public required BookingDetailDto Booking { get; init; }
+    public long DepositRequiredAmount { get; init; }
     public IReadOnlyList<PaymentAttemptDto> Attempts { get; init; } = [];
     public string? VietQrImageUrl { get; init; }
     public string? LanDemoUrl { get; init; }

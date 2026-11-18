@@ -10,7 +10,10 @@
     var canSettle = booking.Status == BookingStatus.InProgress;
     var canNoShow = booking.Status == BookingStatus.Confirmed;
     var canCancel = booking.Status is BookingStatus.PendingPayment or BookingStatus.Confirmed or BookingStatus.CheckedIn;
-    var suggestedPayment = booking.RemainingAmount > 0 ? booking.RemainingAmount : 100000;
+    var depositOutstanding = Math.Max(0, Model.DepositRequiredAmount - booking.PaidAmount + booking.RefundedAmount);
+    var suggestedPayment = booking.Status == BookingStatus.PendingPayment && depositOutstanding > 0
+        ? Math.Min(booking.RemainingAmount, depositOutstanding)
+        : booking.RemainingAmount;
 }
 @functions {
     private static string FormatMoney(long amount) => string.Format("{0:N0} ₫", amount).Replace(",", ".");
@@ -137,10 +140,16 @@
         <aside class="space-y-5">
             <section id="next-step" class="fb-card p-4">
                 <h2 class="font-semibold text-ink">Bước tiếp theo</h2>
+                @if (canConfirm)
+                {
+                    <div class="mt-3 rounded-ui border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                        Tiền cọc bắt buộc: <strong>@FormatMoney(Model.DepositRequiredAmount)</strong> · Còn thiếu để xác nhận: <strong>@FormatMoney(depositOutstanding)</strong>.
+                    </div>
+                }
                 <div class="mt-3 rounded-ui border border-line bg-slate-50 p-3 text-sm text-muted">
                     @if (canConfirm)
                     {
-                        <p><span class="font-semibold text-ink">Chờ thanh toán:</span> ghi nhận cọc nếu khách đã thanh toán, hoặc xác nhận giữ sân nếu sân cho phép thanh toán sau.</p>
+                        <p><span class="font-semibold text-ink">Chờ cọc:</span> ghi nhận đủ tiền cọc trước khi xác nhận; GĐ5-A không cho phép bỏ qua ngưỡng cọc.</p>
                     }
                     else if (canCheckIn)
                     {
@@ -171,7 +180,7 @@
                         {
                             <div class="rounded-ui border border-amber-200 bg-amber-50 p-3">
                                 <p class="text-sm font-semibold text-amber-900">Nếu khách đã cọc, ghi nhận thanh toán trước</p>
-                                <p class="mt-1 text-sm text-amber-800">Sau khi ghi nhận, hệ thống cập nhật số đã thu và trạng thái thanh toán. Booking vẫn ở bước chờ thanh toán cho đến khi bấm xác nhận giữ sân.</p>
+                                <p class="mt-1 text-sm text-amber-800">Khi thu đủ cọc trong hạn, hệ thống tự xác nhận booking và giữ số tiền còn lại là công nợ.</p>
                                 <form class="mt-3 grid gap-3" method="post" action="/admin/bookings/@booking.Id/payments">
                                     @Html.AntiForgeryToken()
                                     <div><label class="fb-label" asp-for="PaymentForm.Amount"></label><input class="fb-input" asp-for="PaymentForm.Amount" type="number" min="1" name="Amount" value="@suggestedPayment" /></div>
@@ -185,7 +194,7 @@
                                 </form>
                             </div>
                         }
-                        <form method="post" action="/admin/bookings/@booking.Id/confirm">@Html.AntiForgeryToken()<button class="fb-button fb-button-secondary w-full justify-center" type="submit">Xác nhận giữ sân</button></form>
+                        <form method="post" action="/admin/bookings/@booking.Id/confirm">@Html.AntiForgeryToken()<button class="fb-button fb-button-secondary w-full justify-center" type="submit" disabled="@(depositOutstanding > 0)">Xác nhận giữ sân</button></form>
                     }
                     @if (canCheckIn)
                     {

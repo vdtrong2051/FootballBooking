@@ -16,7 +16,8 @@ public sealed class EfPaymentAttemptService(
     IBookingWriteLock bookingLock,
     ISystemClock clock,
     IOptions<PaymentOptions> options,
-    IHostEnvironment environment) : IPaymentAttemptService
+    IHostEnvironment environment,
+    BookingPolicyOptions? bookingPolicy = null) : IPaymentAttemptService
 {
     private static readonly TimeSpan LockTimeout = TimeSpan.FromSeconds(5);
 
@@ -58,7 +59,12 @@ public sealed class EfPaymentAttemptService(
             return PaymentAttemptResult.Fail("Booking không còn ở trạng thái chờ thanh toán.");
 
         var remaining = booking.TotalAmount - booking.PaidAmount + booking.RefundedAmount;
-        if (remaining <= 0) return PaymentAttemptResult.Fail("Booking không còn số tiền cần thanh toán.");
+        var depositDue = BookingDepositPolicy.OutstandingToConfirm(booking.TotalAmount,
+            booking.PaidAmount, booking.RefundedAmount, bookingPolicy ?? new BookingPolicyOptions());
+        if (remaining <= 0 || depositDue <= 0)
+            return PaymentAttemptResult.Fail("Booking không còn tiền cọc cần thanh toán.");
+        // During the hold, QR collects only the outstanding deposit, not the whole invoice.
+        var amountToCollect = Math.Min(remaining, depositDue);
 
         var existing = await db.PaymentAttempts
             .Where(x => x.BookingId == bookingId)
@@ -68,7 +74,7 @@ public sealed class EfPaymentAttemptService(
         foreach (var previous in existing)
         {
             previous.Expire(now);
-            if (previous.IsLive(now) && previous.Method == method && previous.Amount == remaining)
+            if (previous.IsLive(now) && previous.Method == method && previous.Amount == amountToCollect)
             {
                 await db.SaveChangesAsync(ct);
                 return PaymentAttemptResult.Ok(ToDto(previous, booking.BookingCode));
@@ -76,7 +82,7 @@ public sealed class EfPaymentAttemptService(
             previous.Cancel(now);
         }
 
-        var attempt = new PaymentAttempt(Guid.NewGuid(), booking.Id, method, remaining,
+        var attempt = new PaymentAttempt(Guid.NewGuid(), booking.Id, method, amountToCollect,
             "FBPAY" + Guid.NewGuid().ToString("N")[..18].ToUpperInvariant(), booking.ExpiresAtUtc.Value, now);
         db.PaymentAttempts.Add(attempt);
         await db.SaveChangesAsync(ct);
@@ -191,7 +197,9 @@ public sealed class EfPaymentAttemptService(
             PaymentRecordStatus.Succeeded, reference, receiptNote,
             actorId, now);
         db.Payments.Add(payment);
-        booking.Confirm(now);
+        if (BookingDepositPolicy.OutstandingToConfirm(booking.TotalAmount,
+            booking.PaidAmount, booking.RefundedAmount, bookingPolicy ?? new BookingPolicyOptions()) == 0)
+            booking.Confirm(now);
         attempt.Confirm(reference, receivedAmount, actorId, now);
         await db.SaveChangesAsync(ct); // EF Core saves ledger + booking + attempt atomically.
         return PaymentAttemptResult.Ok(ToDto(attempt, booking.BookingCode));

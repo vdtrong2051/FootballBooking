@@ -19,6 +19,7 @@
   const prices = {
     court: byId('gd1-price-court'), services: byId('gd1-price-services'),
     discount: byId('gd1-price-discount'), total: byId('gd1-price-total'),
+    deposit: byId('gd1-price-deposit'),
   };
   const money = (value) => `${new Intl.NumberFormat('vi-VN').format(Number(value) || 0)} ₫`;
   const minute = (value) => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
@@ -58,6 +59,7 @@
     prices.services.textContent = money(0);
     prices.discount.textContent = `-${money(0)}`;
     prices.total.textContent = money(0);
+    prices.deposit.textContent = money(0);
     byId('gd1-mobile-total').textContent = money(0);
   }
 
@@ -96,7 +98,8 @@
     }
   }
 
-  async function updateAvailability() {
+  async function updateAvailability({ preserveSelection = false } = {}) {
+    const previousStart = preserveSelection ? selectedStart() : -1;
     const myRevision = ++revision;
     availabilityAbort?.abort();
     quoteAbort?.abort();
@@ -117,6 +120,20 @@
       const data = await response.json();
       if (myRevision !== revision) return;
       renderSlots(Array.isArray(data) ? data : data.slots);
+      if (preserveSelection && previousStart >= 0) {
+        const keep = [...slots.querySelectorAll('input[name="StartMinute"]')]
+          .find(input => Number(input.value) === previousStart && !input.disabled);
+        if (keep) {
+          keep.checked = true;
+          updateSummary();
+          await updateQuote();
+          return;
+        }
+        slotStatus.textContent = 'Giờ đã chọn vừa được đặt hoặc khóa. Vui lòng chọn giờ khác.';
+        clearQuote('Giờ đã chọn không còn khả dụng.');
+        updateSummary();
+        return;
+      }
       quoteStatus.textContent = 'Chọn một khung giờ để xem giá dự kiến.';
     } catch (error) {
       if (error.name === 'AbortError' || myRevision !== revision) return;
@@ -151,6 +168,7 @@
     prices.services.textContent = money(data.serviceAmount);
     prices.discount.textContent = `-${money(data.discountAmount)}`;
     prices.total.textContent = money(data.totalAmount);
+    prices.deposit.textContent = money(data.depositRequiredAmount);
     byId('gd1-mobile-total').textContent = money(data.totalAmount);
   }
 
@@ -222,11 +240,59 @@
   form.addEventListener('input', (event) => {
     if (event.target.matches('input[name^="Services["][name$=".Quantity"]')) debounceQuote();
   });
-  form.addEventListener('submit', (event) => {
+  let submissionVerified = false;
+  let submissionChecking = false;
+  form.addEventListener('submit', async (event) => {
+    if (submissionVerified) return;
+    event.preventDefault();
+    if (submissionChecking) return;
     if (!hasValidQuote || selectedStart() < 0) {
-      event.preventDefault();
       quoteStatus.textContent = 'Vui lòng chọn khung giờ hợp lệ và chờ báo giá trước khi xác nhận.';
+      return;
+    }
+    submissionChecking = true;
+    enableSubmit(false);
+    quoteStatus.textContent = 'Đang kiểm tra lại tình trạng sân và giá trước khi đặt...';
+    try {
+      const response = await fetch('/booking/quote', {
+        method: 'POST', cache: 'no-store', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': requestToken || '' },
+        body: JSON.stringify({
+          fieldId: field.value, bookingDateText: date.value.trim(),
+          startMinute: selectedStart(), durationMinutes: Number(duration.value),
+          customerPhone: phone.value, promotionCode: promotion.value,
+          services: servicesFromForm()
+        })
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const quote = await response.json();
+      if (!quote.isValid) {
+        showErrors(quote.errors);
+        quoteStatus.textContent = 'Lịch hoặc báo giá đã thay đổi. Vui lòng chọn lại giờ hợp lệ.';
+        await updateAvailability({ preserveSelection: true });
+        return;
+      }
+      renderPrice(quote);
+      if (!form.reportValidity()) return;
+      submissionVerified = true;
+      form.requestSubmit(); // Native validation + anti-forgery token; server revalidates under lock.
+    } catch {
+      quoteStatus.textContent = 'Chưa xác minh được giờ trống. Vui lòng thử lại.';
+    } finally {
+      submissionChecking = false;
+      if (!submissionVerified) await updateQuote();
     }
   });
+  window.addEventListener('focus', () => {
+    if (!submissionChecking && !submissionVerified) updateAvailability({ preserveSelection: true });
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !submissionChecking && !submissionVerified)
+      updateAvailability({ preserveSelection: true });
+  });
+  window.setInterval(() => {
+    if (!document.hidden && !submissionChecking && !submissionVerified)
+      updateAvailability({ preserveSelection: true });
+  }, 15000);
   updateSummary();
 })();

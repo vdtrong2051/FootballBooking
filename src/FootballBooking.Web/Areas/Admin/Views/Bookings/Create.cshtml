@@ -8,7 +8,7 @@
 }
 
 <div class="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-    <form class="fb-card p-4" method="post">
+    <form id="gd5a-admin-booking-form" class="fb-card p-4" method="post">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="mb-4 rounded-ui border border-red-200 bg-red-50 p-3 text-sm text-red-800"></div>
         <div class="grid gap-4 sm:grid-cols-2">
@@ -27,8 +27,15 @@
                 <span class="text-xs text-red-700" asp-validation-for="BookingDateText"></span>
             </div>
             <div>
-                <label class="fb-label" asp-for="StartMinute">Từ phút</label>
-                <input class="fb-input" asp-for="StartMinute" type="number" />
+                <label class="fb-label" asp-for="StartMinute">Giờ bắt đầu</label>
+                <select class="fb-input" asp-for="StartMinute">
+                    <option value="-1">Chọn khung giờ trống</option>
+                    @foreach (var slot in Model.Slots)
+                    {
+                        <option value="@slot.StartMinute" disabled="@(!slot.IsAvailable)">@(slot.Label + (slot.IsAvailable ? "" : " (đã kín)"))</option>
+                    }
+                </select>
+                <p id="gd5a-admin-slot-status" class="mt-1 text-xs text-muted" role="status">Lịch được đồng bộ tự động khi trang đang mở.</p>
             </div>
             <div>
                 <label class="fb-label" asp-for="DurationMinutes">Thời lượng</label>
@@ -105,6 +112,7 @@
                     <div class="border-t border-line pt-3 flex justify-between font-semibold"><span>Tổng tiền sân</span><span>@FormatMoney(Model.Quote.CourtAmount)</span></div>
                     <div class="flex justify-between"><span class="text-muted">Dịch vụ đã chọn</span><span>@FormatMoney(Model.ServiceAmount)</span></div>
                     <div class="border-t border-line pt-3 flex justify-between font-semibold text-brand-900"><span>Tạm tính trước khuyến mãi</span><span>@FormatMoney(Model.EstimatedTotal)</span></div>
+                    <div class="flex justify-between font-semibold text-amber-900"><span>Tiền cọc cần thu</span><span>@FormatMoney(Model.QuotePreview?.DepositRequiredAmount ?? 0)</span></div>
                 </div>
             }
         </section>
@@ -120,4 +128,5 @@
     </aside>
 </div>
 
+<script src="~/js/gd5a-admin-booking.js" asp-append-version="true" defer></script>
 <partial name="_ValidationScriptsPartial" />

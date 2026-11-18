@@ -24,7 +24,10 @@ public sealed record BookingPricePreviewDto(
     long DiscountAmount,
     long TotalAmount,
     IReadOnlyList<PricingSegmentDto> Segments,
-    IReadOnlyList<string> Errors);
+    IReadOnlyList<string> Errors)
+{
+    public long DepositRequiredAmount { get; init; }
+}
 
 public sealed record ServiceItemDto(
     Guid Id,

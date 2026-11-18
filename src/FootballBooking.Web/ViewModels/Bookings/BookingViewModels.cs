@@ -91,6 +91,7 @@ public sealed class BookingQuoteServiceRequestViewModel
 public sealed class BookingSuccessViewModel
 {
     public required BookingDetailDto Booking { get; init; }
+    public long DepositRequiredAmount { get; init; }
 }
 
 public sealed class BookingLookupViewModel
@@ -118,6 +119,7 @@ public sealed class AdminBookingListViewModel
 public sealed class AdminBookingDetailViewModel
 {
     public required BookingDetailDto Booking { get; init; }
+    public long DepositRequiredAmount { get; init; }
     public PaymentFormViewModel PaymentForm { get; init; } = new();
     public CancellationFormViewModel CancellationForm { get; init; } = new();
 }

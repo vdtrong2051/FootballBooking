@@ -237,6 +237,91 @@ public sealed class BookingServiceTests
     }
 
     [Fact]
+    public async Task Gd5A_PaymentBelowDeposit_DoesNotConfirmPendingBooking()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var booking = CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.PendingPayment);
+        store.Bookings.Add(booking);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var payment = await service.RecordPaymentAsync(new BookingPaymentCommand(booking.Id,
+            PaymentRecordType.Payment, PaymentMethod.Cash, 1, "SMALL-PAYMENT", null, null));
+
+        Assert.True(payment.Succeeded);
+        Assert.Equal(BookingStatus.PendingPayment, booking.Status);
+        Assert.Equal(1, booking.PaidAmount);
+    }
+
+    [Fact]
+    public async Task Gd5A_ManualConfirmationWithoutDeposit_IsRejected()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var booking = CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.PendingPayment);
+        store.Bookings.Add(booking);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var result = await service.ChangeStatusAsync(booking.Id, BookingStatus.Confirmed);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(BookingStatus.PendingPayment, booking.Status);
+        Assert.Contains(result.Errors, message => message.Contains("Chưa đủ tiền cọc"));
+    }
+
+    [Fact]
+    public async Task Gd5A_StaffBooking_DoesNotBypassDeposit()
+    {
+        var store = new InMemoryBookingStore(CreateField());
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var result = await service.CreateBookingAsync(ValidGuestCommand() with
+        {
+            Source = BookingSource.Staff, CreatedByUserId = Guid.NewGuid()
+        });
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(BookingStatus.PendingPayment, Assert.Single(store.Bookings).Status);
+    }
+
+    [Fact]
+    public async Task Gd5A_PaymentAboveRemaining_DoesNotRecordMoney()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var booking = CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed);
+        store.Bookings.Add(booking);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var result = await service.RecordPaymentAsync(new BookingPaymentCommand(booking.Id,
+            PaymentRecordType.Payment, PaymentMethod.Cash, 250_001, "OVERPAY", null, null));
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(booking.Payments);
+    }
+
+    [Fact]
+    public async Task Gd5A_DuplicateReferenceAcrossBookings_IsRejected()
+    {
+        var field = CreateField();
+        var store = new InMemoryBookingStore(field);
+        var first = CreateExistingBooking(field.Id, 1080, 1140, BookingStatus.Confirmed);
+        var second = CreateExistingBooking(field.Id, 1140, 1200, BookingStatus.Confirmed);
+        store.Bookings.Add(first);
+        store.Bookings.Add(second);
+        var service = new BookingService(store, new ImmediateBookingWriteLock(), new FixedClock());
+
+        var paid = await service.RecordPaymentAsync(new BookingPaymentCommand(first.Id,
+            PaymentRecordType.Payment, PaymentMethod.BankTransfer, 20_000, "SAME-REF-123", null, null));
+        var duplicated = await service.RecordPaymentAsync(new BookingPaymentCommand(second.Id,
+            PaymentRecordType.Payment, PaymentMethod.BankTransfer, 20_000, "SAME-REF-123", null, null));
+
+        Assert.True(paid.Succeeded);
+        Assert.False(duplicated.Succeeded);
+        Assert.Empty(second.Payments);
+    }
+
+    [Fact]
     public async Task RecordPaymentAsync_WhenDepositRecorded_ConfirmsPendingBookingAndMarksPartiallyPaid()
     {
         var field = CreateField();
@@ -583,6 +668,11 @@ public sealed class BookingServiceTests
 
         public Task<bool> BookingCodeExistsAsync(string bookingCode, CancellationToken cancellationToken)
             => Task.FromResult(Bookings.Any(booking => booking.BookingCode == bookingCode));
+
+        public Task<bool> SuccessfulPaymentReferenceExistsAsync(string transactionCode, CancellationToken cancellationToken)
+            => Task.FromResult(Bookings.SelectMany(booking => booking.Payments).Any(payment =>
+                payment.Status == PaymentRecordStatus.Succeeded
+                && payment.TransactionCode == transactionCode));
 
         public Task SaveChangesAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 

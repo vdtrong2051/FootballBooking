@@ -14,7 +14,8 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 [Area("Admin")]
 [Route("admin/bookings")]
 [Authorize(Policy = "CanAccessBookings")]
-public sealed class BookingsController(IBookingService bookingService, IFieldService fieldService) : Controller
+public sealed class BookingsController(IBookingService bookingService, IFieldService fieldService,
+    BookingPolicyOptions? bookingPolicy = null) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(string? bookingDateText, Guid? fieldId, BookingStatus? status, CancellationToken cancellationToken)
@@ -57,6 +58,8 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
     {
         await PopulateCreateModelAsync(model, cancellationToken);
         var bookingDate = model.ParseBookingDate();
+        if (model.DurationMinutes is not (60 or 90 or 120))
+            ModelState.AddModelError(nameof(model.DurationMinutes), "Thời lượng phải là 60, 90 hoặc 120 phút.");
         if (bookingDate is null)
         {
             ModelState.AddModelError(nameof(model.BookingDateText), "Ngày đặt sân cần nhập theo định dạng dd/MM/yyyy.");
@@ -101,7 +104,7 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đã tạo booking cho khách.";
+        TempData["SuccessMessage"] = "Đã tạo booking chờ thu cọc; chưa xác nhận giữ sân chính thức.";
         return RedirectToAction(nameof(Details), new { id = result.BookingId });
     }
 
@@ -115,7 +118,11 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
         }
 
         PrepareBreadcrumb(booking.BookingCode);
-        return View(new AdminBookingDetailViewModel { Booking = booking });
+        return View(new AdminBookingDetailViewModel
+        {
+            Booking = booking,
+            DepositRequiredAmount = BookingDepositPolicy.RequiredAmount(booking.TotalAmount, bookingPolicy ?? new BookingPolicyOptions())
+        });
     }
 
     [HttpGet("{id:guid}/settlement")]
@@ -300,8 +307,15 @@ public sealed class BookingsController(IBookingService bookingService, IFieldSer
             return;
         }
 
-        model.Slots = await bookingService.GetAvailabilityAsync(model.FieldId, bookingDate.Value, cancellationToken);
-        model.Quote = await bookingService.GetPricingQuoteAsync(model.FieldId, bookingDate.Value, model.StartMinute, model.EndMinute, cancellationToken);
+        if (model.DurationMinutes is not (60 or 90 or 120)) return;
+        model.Slots = await bookingService.GetAvailabilityAsync(model.FieldId, bookingDate.Value,
+            model.DurationMinutes, cancellationToken);
+        if (model.StartMinute < 0) return;
+        model.Quote = await bookingService.GetPricingQuoteAsync(model.FieldId, bookingDate.Value,
+            model.StartMinute, model.EndMinute, cancellationToken);
+        model.QuotePreview = await bookingService.GetBookingQuoteAsync(new BookingQuoteQuery(
+            model.FieldId, bookingDate.Value, model.StartMinute, model.EndMinute,
+            model.CustomerPhone, SelectedServices(model), model.PromotionCode), cancellationToken);
     }
 
     private void PrepareBreadcrumb(string title)
