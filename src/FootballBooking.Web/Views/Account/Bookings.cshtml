@@ -13,6 +13,10 @@
     <p class="fb-account-kicker">Quản lý lịch đặt</p>
     <h2 class="fb-account-section-title mt-1">Lịch đặt sân</h2>
     <p class="mt-2 text-sm text-muted">Chỉ hiển thị booking thuộc tài khoản đã xác minh của bạn. Booking vãng lai cần tra cứu riêng.</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+        <a class="fb-button fb-button-primary" href="/account/recurring/create">Đặt sân định kỳ</a>
+        <a class="fb-button fb-button-secondary" href="/account/recurring">Chuỗi định kỳ của tôi</a>
+    </div>
     @if (Model.Bookings.Count > 0)
     {
         <div class="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -54,7 +58,11 @@
                             {
                                 <a class="fb-button fb-button-primary" href="/booking/pay/@booking.BookingCode">Tiếp tục thanh toán</a>
                             }
-                            <a class="fb-button fb-button-secondary" href="/booking?fieldId=@booking.FieldId&amp;date=@dateValue&amp;startMinute=@booking.StartMinute&amp;durationMinutes=@(booking.EndMinute-booking.StartMinute)">Đặt lại</a>
+                            <a class="fb-button fb-button-secondary" href="/account/bookings/@booking.Id/rebook">Đặt lại</a>
+                            @if (booking.Status == BookingStatus.Confirmed)
+                            {
+                                <a class="fb-button fb-button-secondary" href="/booking/manage/customer/@booking.Id/reschedule">Đổi lịch</a>
+                            }
                             @if (canCancel)
                             {
                                 <form method="post" action="/booking/@booking.BookingCode/cancel" onsubmit="return confirm('Xác nhận gửi yêu cầu hủy booking này?');">

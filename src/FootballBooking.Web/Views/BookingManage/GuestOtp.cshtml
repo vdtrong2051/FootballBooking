@@ -1,0 +1,26 @@
+@model FootballBooking.Web.ViewModels.Bookings.GuestOtpFormViewModel
+@{
+    ViewData["Title"] = "Xác thực đặt sân vãng lai";
+}
+<section class="fb-container py-8">
+    <div class="mx-auto max-w-xl space-y-5">
+        <h1 class="text-2xl font-semibold text-ink">Xác thực Guest trước khi đổi lịch</h1>
+        <p class="text-sm text-muted">OTP chỉ gửi đến số đã dùng khi đặt sân; mã có hiệu lực 5 phút. Không cần đăng ký tài khoản.</p>
+        @if (TempData["SuccessMessage"] is string info) { <p class="rounded-lg bg-green-50 p-3 text-green-800">@info</p> }
+        @if (TempData["ErrorMessage"] is string error) { <p class="rounded-lg bg-red-50 p-3 text-red-800">@error</p> }
+        <form class="fb-card space-y-3 p-5" method="post" action="/booking/manage/guest/@Model.BookingCode/otp/send">
+            @Html.AntiForgeryToken()
+            <label class="fb-label" for="phone">Số điện thoại đã đặt</label>
+            <input class="fb-input" name="phone" id="phone" autocomplete="tel" required />
+            <button class="fb-button fb-button-secondary" type="submit">Gửi mã OTP</button>
+        </form>
+        <form class="fb-card space-y-3 p-5" method="post" action="/booking/manage/guest/@Model.BookingCode/otp/verify">
+            @Html.AntiForgeryToken()
+            <label class="fb-label" for="verify-phone">Số điện thoại đã đặt</label>
+            <input class="fb-input" name="phone" id="verify-phone" autocomplete="tel" required />
+            <label class="fb-label" for="challengeCode">Mã OTP 6 số</label>
+            <input class="fb-input" name="challengeCode" id="challengeCode" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" required />
+            <button class="fb-button fb-button-primary" type="submit">Xác minh và quản lý lịch</button>
+        </form>
+    </div>
+</section>

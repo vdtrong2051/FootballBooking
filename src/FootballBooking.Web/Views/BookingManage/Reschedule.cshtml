@@ -1,0 +1,53 @@
+@model FootballBooking.Web.ViewModels.Bookings.RescheduleFormViewModel
+@{
+    ViewData["Title"] = "Đổi lịch đặt sân";
+    var booking = Model.Booking!;
+    var url = Model.IsGuest ? $"/booking/manage/guest/{Model.BookingCode}/reschedule"
+        : $"/booking/manage/customer/{Model.BookingId}/reschedule";
+}
+@functions {
+    private static string Money(long x) => $"{x:N0} ₫";
+    private static string Clock(int x) => $"{x / 60:00}:{x % 60:00}";
+}
+<section class="fb-container py-8">
+    <div class="mx-auto max-w-2xl space-y-5">
+        <div>
+            <h1 class="text-2xl font-semibold text-ink">Đổi lịch đã xác nhận</h1>
+            <p class="mt-2 text-sm text-muted">@booking.BookingCode · @booking.FieldName · @booking.BookingDate.ToString("dd/MM/yyyy") @Clock(booking.StartMinute) – @Clock(booking.EndMinute)</p>
+            <p class="mt-2 text-sm text-muted">Chỉ đổi lịch trước giờ chơi tối thiểu 12 giờ, giữ nguyên sân và thời lượng. Không tự hoàn tiền; nếu thiếu cọc hoặc cần hoàn tiền, vui lòng liên hệ nhân viên.</p>
+        </div>
+        @if (TempData["ErrorMessage"] is string error) { <p class="rounded-lg bg-red-50 p-3 text-red-800">@error</p> }
+        <form class="fb-card space-y-4 p-5" action="@url" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+            <input name="DurationMinutes" type="hidden" value="@Model.DurationMinutes" />
+            <div><label class="fb-label" for="TargetDateText">Ngày mới (dd/MM/yyyy)</label><input class="fb-input" id="TargetDateText" name="TargetDateText" value="@Model.TargetDateText" required /></div>
+            <div><label class="fb-label" for="TargetStartMinute">Giờ bắt đầu mới</label>
+                <select class="fb-input" id="TargetStartMinute" name="TargetStartMinute">
+                    @for (var minute = 0; minute <= 1440 - Model.DurationMinutes; minute += 15)
+                    {
+                        <option value="@minute" selected="@(minute == Model.TargetStartMinute)">@Clock(minute)</option>
+                    }
+                </select>
+                <p class="mt-1 text-xs text-muted">Hệ thống kiểm tra lại giờ hoạt động, bảng giá và booking trùng khi xác nhận.</p>
+            </div>
+            <button class="fb-button fb-button-secondary" name="action" value="preview" type="submit">Xem báo giá mới</button>
+            @if (Model.Preview is { Succeeded: true } preview)
+            {
+                <div class="rounded-lg border border-line bg-slate-50 p-4 text-sm">
+                    <p>Tổng hiện tại: <strong>@Money(preview.OldTotal)</strong></p>
+                    <p>Tổng sau đổi: <strong>@Money(preview.NewTotal)</strong></p>
+                    <p>Chênh lệch: <strong>@Money(preview.Difference)</strong></p>
+                </div>
+                <input type="hidden" name="ExpectedNewTotalAmount" value="@preview.NewTotal" />
+                <input type="hidden" name="PreviewToken" value="@Model.PreviewToken" />
+                <button class="fb-button fb-button-primary" name="action" value="confirm" type="submit">Xác nhận đổi lịch</button>
+            }
+            else if (Model.Preview is { Succeeded: false } bad)
+            {
+                <ul class="text-sm text-red-700">@foreach (var message in bad.Errors) { <li>@message</li> }</ul>
+            }
+        </form>
+        <a class="fb-button fb-button-secondary" href="@(Model.IsGuest ? "/booking/lookup" : "/account/bookings")">Quay lại</a>
+    </div>
+</section>

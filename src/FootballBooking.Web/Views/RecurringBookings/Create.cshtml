@@ -1,0 +1,34 @@
+@model FootballBooking.Web.ViewModels.Bookings.RecurringCreateViewModel
+@{
+    ViewData["Title"] = "Đặt sân định kỳ";
+}
+<section class="fb-container py-8">
+    <div class="mx-auto max-w-2xl">
+        <h1 class="text-2xl font-semibold text-ink">Đặt sân định kỳ hằng tuần</h1>
+        <p class="mt-2 text-sm text-muted">Tối đa 12 tuần, mỗi tuần một booking độc lập. Hệ thống bỏ qua từng ngày bị trùng và hiển thị kết quả theo buổi. Không tự động trừ tiền.</p>
+        <form class="fb-card mt-5 space-y-4 p-5" method="post" action="/account/recurring/create">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-sm text-red-700"></div>
+            <input type="hidden" asp-for="SeriesId" />
+            <div><label class="fb-label" for="FieldId">Sân</label>
+                <select class="fb-input" id="FieldId" name="FieldId" required>
+                    @foreach (var field in Model.Fields) { <option value="@field.Id" selected="@(field.Id == Model.FieldId)">@field.Name · @field.FieldType</option> }
+                </select>
+            </div>
+            <div><label class="fb-label" for="FirstDateText">Ngày đầu tiên (dd/MM/yyyy)</label><input class="fb-input" id="FirstDateText" name="FirstDateText" value="@Model.FirstDateText" required /></div>
+            <div><label class="fb-label" for="StartMinute">Giờ bắt đầu</label>
+                <select class="fb-input" id="StartMinute" name="StartMinute">
+                    @for (var m = 0; m <= 1440 - Model.DurationMinutes; m += 15) { <option value="@m" selected="@(m == Model.StartMinute)">@($"{m / 60:00}:{m % 60:00}")</option> }
+                </select>
+            </div>
+            <div><label class="fb-label" for="DurationMinutes">Thời lượng mỗi buổi</label>
+                <select class="fb-input" id="DurationMinutes" name="DurationMinutes">
+                    @foreach (var m in new[] { 60, 90, 120 }) { <option value="@m" selected="@(m == Model.DurationMinutes)">@m phút</option> }
+                </select>
+            </div>
+            <div><label class="fb-label" for="Weeks">Số tuần</label><input class="fb-input" name="Weeks" id="Weeks" type="number" min="2" max="12" value="@Model.Weeks" required /></div>
+            <label class="flex gap-2 text-sm text-muted"><input name="AcceptIndependentPayments" type="checkbox" value="true" required />Tôi hiểu mỗi buổi phải thanh toán cọc riêng trong thời hạn giữ chỗ hiện hành (10 phút); buổi chưa trả cọc sẽ hết hạn, không tự trích tiền.</label>
+            <button class="fb-button fb-button-primary" type="submit">Tạo các lượt đặt sân</button>
+        </form>
+    </div>
+</section>

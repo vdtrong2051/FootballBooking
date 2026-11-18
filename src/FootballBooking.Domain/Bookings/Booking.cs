@@ -217,6 +217,24 @@ public sealed class Booking
     }
 
     /// <summary>Extend reserved interval; extra financial lines are recorded separately.</summary>
+    /// <summary>Move a confirmed, unstarted reservation. Payment records remain unchanged.</summary>
+    public void Reschedule(DateOnly date, int startMinute, int endMinute, long newCourtAmount, DateTimeOffset utcNow)
+    {
+        if (Status != BookingStatus.Confirmed || date == default
+            || startMinute < 0 || endMinute <= startMinute || endMinute > 1440 || newCourtAmount < 0)
+            throw new InvalidOperationException("Only confirmed, unstarted bookings can be rescheduled.");
+        var newTotal = checked(TotalAmount - CourtAmount + newCourtAmount);
+        if (newTotal < 0 || newTotal < PaidAmount - RefundedAmount)
+            throw new InvalidOperationException("This change requires a staff-reviewed refund.");
+        BookingDate = date;
+        StartMinute = startMinute;
+        EndMinute = endMinute;
+        CourtAmount = newCourtAmount;
+        TotalAmount = newTotal;
+        RecalculatePaymentStatus();
+        UpdatedAtUtc = utcNow;
+    }
+
     public void ExtendTo(int newEndMinute, DateTimeOffset utcNow)
     {
         if (Status is not (BookingStatus.CheckedIn or BookingStatus.InProgress)

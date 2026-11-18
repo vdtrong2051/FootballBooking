@@ -71,6 +71,11 @@
                     }
                 </section>
             }
+            @if (Model.Result.Source == BookingSource.GuestWeb && Model.Result.Status == BookingStatus.Confirmed)
+            {
+                <p class="mt-4 text-xs text-muted">Khách không có tài khoản có thể xác thực OTP qua số điện thoại đã đặt để yêu cầu đổi lịch.</p>
+                <a class="fb-button fb-button-secondary mt-2" href="/booking/manage/guest/@Model.Result.BookingCode">Xác thực OTP để đổi lịch</a>
+            }
             @if (Model.Result.ServiceLines.Count > 0)
             {
                 <div class="mt-5 border-t border-line pt-4">

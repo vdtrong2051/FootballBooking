@@ -1,0 +1,25 @@
+@model FootballBooking.Application.Bookings.RecurringSeriesDto
+@{
+    ViewData["Title"] = "Chi tiết lịch định kỳ";
+}
+@functions { private static string Clock(int m) => $"{m / 60:00}:{m % 60:00}"; }
+<section class="fb-container py-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-semibold text-ink">Kết quả đặt sân định kỳ</h1>
+        <a class="fb-button fb-button-secondary" href="/account/recurring">Lịch định kỳ của tôi</a>
+    </div>
+    <p class="mt-2 text-sm text-muted">Khung giờ @Clock(Model.StartMinute)–@Clock(Model.StartMinute + Model.DurationMinutes) · @Model.Weeks tuần.</p>
+    <p class="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Lưu ý: đặt thành công không đồng nghĩa đã xác nhận. Mỗi booking có thời hạn giữ chỗ và tiền cọc độc lập; không thanh toán thì sẽ hết hạn.</p>
+    <div class="mt-5 space-y-3">
+        @foreach (var item in Model.Occurrences)
+        {
+            <div class="fb-card flex flex-wrap items-center justify-between gap-3 p-4">
+                <div><strong>@item.Date.ToString("dd/MM/yyyy")</strong>
+                    @if (item.BookingCode is null) { <p class="mt-1 text-sm text-red-700">@(item.Error ?? "Không đặt được")</p> }
+                    else { <p class="mt-1 text-sm text-green-800">Đã tạo: @item.BookingCode</p> }
+                </div>
+                @if (item.BookingCode is not null) { <a class="fb-button fb-button-primary" href="/booking/pay/@item.BookingCode">Thanh toán cọc</a> }
+            </div>
+        }
+    </div>
+</section>

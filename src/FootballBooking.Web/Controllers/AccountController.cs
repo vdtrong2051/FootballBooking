@@ -231,6 +231,24 @@ public sealed class AccountController(
         return RedirectToAction("Index", "Home");
     }
 
+    [HttpGet("bookings/{id:guid}/rebook")]
+    [Authorize(Roles = ApplicationRoles.Customer)]
+    public async Task<IActionResult> Rebook(Guid id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)) return Forbid();
+        var booking = await bookingService.GetAdminBookingAsync(id, cancellationToken);
+        if (booking is null || booking.CustomerUserId != userId) return NotFound();
+        var localToday = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(7)).DateTime);
+        var nextDate = booking.BookingDate > localToday ? booking.BookingDate : localToday.AddDays(1);
+        var length = booking.EndMinute - booking.StartMinute;
+        var duration = length is 60 or 90 or 120 ? length : 60;
+        return RedirectToAction("Create", "Booking", new {
+            fieldId = booking.FieldId,
+            date = nextDate.ToString("dd/MM/yyyy"),
+            startMinute = booking.StartMinute, durationMinutes = duration
+        });
+    }
+
     [HttpGet("bookings")]
     [Authorize]
     public async Task<IActionResult> Bookings(CancellationToken cancellationToken)

@@ -19,5 +19,9 @@ public sealed class BookingPolicyOptions
     public int OvertimeGraceMinutes { get; set; } = 5;
     public int OvertimeBillingStepMinutes { get; set; } = 15;
     public int MaxAutoOvertimeMinutes { get; set; } = 180;
+    // GD5-D: changing an existing reservation requires advance notice.
+    public int RescheduleCutoffHours { get; set; } = 12;
+    public int MaxCustomerReschedules { get; set; } = 2;
+    public int MaxRecurringWeeks { get; set; } = 12;
 
 }

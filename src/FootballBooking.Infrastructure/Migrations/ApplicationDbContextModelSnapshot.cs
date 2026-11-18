@@ -19,6 +19,154 @@ namespace FootballBooking.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingRescheduleHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("ViaGuestOtp")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateOnly>("OldDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("OldStartMinute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldEndMinute")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("NewDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("NewStartMinute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NewEndMinute")
+                        .HasColumnType("int");
+
+                    b.Property<long>("OldCourtAmount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("NewCourtAmount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OldTotalAmount")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("NewTotalAmount")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId", "CreatedAtUtc");
+
+                    b.ToTable("BookingRescheduleHistory");
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.RecurringBookingSeries", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CustomerUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("FieldId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateOnly>("FirstDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("StartMinute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Weeks")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerUserId", "CreatedAtUtc");
+
+                    b.HasIndex("FieldId");
+
+                    b.ToTable("RecurringBookingSeries");
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.RecurringBookingOccurrence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("SeriesId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateOnly>("BookingDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("BookingId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeriesId", "BookingDate").IsUnique();
+
+                    b.HasIndex("BookingId").IsUnique();
+
+                    b.ToTable("RecurringBookingOccurrences");
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.GuestBookingOtpChallenge", b =>
+                {
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("PhoneNormalized")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("ProtectedCode")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTimeOffset>("SentAtUtc")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("datetime");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.HasKey("BookingId");
+
+                    b.ToTable("GuestBookingOtpChallenges");
+                });
+
             modelBuilder.Entity("FootballBooking.Domain.Bookings.Booking", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1021,6 +1169,46 @@ namespace FootballBooking.Infrastructure.Migrations
                         .WithMany("ExtraCharges")
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.BookingRescheduleHistory", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.RecurringBookingSeries", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Fields.Field", null)
+                        .WithMany()
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.RecurringBookingOccurrence", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("FootballBooking.Domain.Bookings.RecurringBookingSeries", null)
+                        .WithMany()
+                        .HasForeignKey("SeriesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Bookings.GuestBookingOtpChallenge", b =>
+                {
+                    b.HasOne("FootballBooking.Domain.Bookings.Booking", null)
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
