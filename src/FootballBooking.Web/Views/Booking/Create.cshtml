@@ -39,11 +39,19 @@
         <h2 class="text-lg font-semibold text-ink">1. Chọn sân và giờ chơi</h2>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
+                <label class="fb-label" for="gd5c-zone">Phân khu</label>
+                <select id="gd5c-zone" class="fb-input w-full" asp-for="ZoneId">
+                    <option value="">Tất cả khu</option>
+                    @foreach (var zone in Model.Zones)
+                    { <option value="@zone.Id">@zone.Name</option> }
+                </select>
+            </div>
+            <div>
                 <label class="fb-label" asp-for="FieldId">Sân bóng</label>
                 <select class="fb-input w-full" asp-for="FieldId">
                     @foreach (var field in Model.Fields)
                     {
-                        <option value="@field.Id">@field.Name · @field.FieldType</option>
+                        <option value="@field.Id" data-zone="@field.ZoneId">@field.Name · @field.FieldType</option>
                     }
                 </select>
                 <span class="text-xs text-red-700" asp-validation-for="FieldId"></span>
@@ -64,6 +72,20 @@
             </div>
         </div>
 
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const zone = document.getElementById('gd5c-zone');
+            const field = document.getElementById('FieldId');
+            if (!zone || !field) return;
+            zone.addEventListener('change', () => {
+                const eligible = Array.from(field.options).filter(option =>
+                    !zone.value || option.dataset.zone === zone.value);
+                if (eligible.length === 0) return;
+                field.value = eligible[0].value;
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+        </script>
         <fieldset class="mt-6" aria-describedby="gd1-slot-status">
             <legend class="text-sm font-semibold text-ink">Khung giờ bắt đầu</legend>
             <p class="mt-1 text-xs text-muted">Chọn một khung giờ. Giờ kết thúc sẽ tự tính theo thời lượng ở trên.</p>

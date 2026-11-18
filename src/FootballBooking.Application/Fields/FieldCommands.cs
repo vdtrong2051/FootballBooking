@@ -33,7 +33,8 @@ public sealed record FieldEditorCommand(
     FieldStatus Status,
     IReadOnlyList<FieldImageCommand> Images,
     IReadOnlyList<FieldOperatingHourCommand> OperatingHours,
-    IReadOnlyList<PricingRuleCommand> PricingRules);
+    IReadOnlyList<PricingRuleCommand> PricingRules,
+    Guid? ZoneId = null);
 
 public sealed record FieldBlockCommand(
     Guid FieldId,

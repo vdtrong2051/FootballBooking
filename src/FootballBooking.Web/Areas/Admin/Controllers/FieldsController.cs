@@ -11,7 +11,7 @@ namespace FootballBooking.Web.Areas.Admin.Controllers;
 [Area("Admin")]
 [Route("admin/fields")]
 [Authorize(Policy = "CanManageCatalog")]
-public sealed class FieldsController(IFieldService fieldService) : Controller
+public sealed class FieldsController(IFieldService fieldService, IFieldZoneService? zoneService = null) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -24,13 +24,15 @@ public sealed class FieldsController(IFieldService fieldService) : Controller
         };
 
         var fields = await fieldService.ListAdminFieldsAsync(cancellationToken);
+        ViewData["Zones"] = zoneService is null ? Array.Empty<FieldZoneDto>() : await zoneService.ListAsync(true, cancellationToken);
         return View(fields);
     }
 
     [HttpGet("create")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken = default)
     {
         PrepareEditView("Thêm sân mới");
+        await PopulateZoneOptionsAsync(cancellationToken);
         return View("Edit", FieldFormViewModel.CreateDefault());
     }
 
@@ -39,6 +41,7 @@ public sealed class FieldsController(IFieldService fieldService) : Controller
     public async Task<IActionResult> Create(FieldFormViewModel model, CancellationToken cancellationToken)
     {
         PrepareEditView("Thêm sân mới");
+        await PopulateZoneOptionsAsync(cancellationToken);
         var result = await fieldService.CreateFieldAsync(model.ToCommand(), cancellationToken);
         if (!result.Succeeded)
         {
@@ -81,6 +84,7 @@ public sealed class FieldsController(IFieldService fieldService) : Controller
         }
 
         PrepareEditView($"Cập nhật {field.Name}");
+        await PopulateZoneOptionsAsync(cancellationToken);
         return View(FieldFormViewModel.FromDetail(field));
     }
 
@@ -89,6 +93,7 @@ public sealed class FieldsController(IFieldService fieldService) : Controller
     public async Task<IActionResult> Edit(Guid id, FieldFormViewModel model, CancellationToken cancellationToken)
     {
         PrepareEditView($"Cập nhật {model.Name}");
+        await PopulateZoneOptionsAsync(cancellationToken);
         var result = await fieldService.UpdateFieldAsync(id, model.ToCommand(), cancellationToken);
         if (!result.Succeeded)
         {
@@ -131,6 +136,11 @@ public sealed class FieldsController(IFieldService fieldService) : Controller
         }
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private async Task PopulateZoneOptionsAsync(CancellationToken cancellationToken)
+    {
+        ViewData["Zones"] = zoneService is null ? Array.Empty<FieldZoneDto>() : await zoneService.ListAsync(true, cancellationToken);
     }
 
     private void PrepareEditView(string title)

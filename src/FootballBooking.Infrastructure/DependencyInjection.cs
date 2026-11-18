@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<PhoneChangeOtpService>();
 
         services.AddScoped<IFieldStore, EfFieldStore>();
+        services.AddScoped<IFieldZoneStore, EfFieldZoneStore>();
         services.AddScoped<IBookingStore, EfBookingStore>();
         services.AddScoped<IBookingOperationsService, EfBookingOperationsService>();
         services.Configure<PaymentOptions>(configuration.GetSection(PaymentOptions.SectionName));

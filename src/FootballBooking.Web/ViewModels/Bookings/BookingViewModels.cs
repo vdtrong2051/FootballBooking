@@ -46,6 +46,8 @@ public sealed class BookingCreateViewModel
 
     public List<BookingServiceSelectionViewModel> Services { get; set; } = [];
     public IReadOnlyList<FieldSummaryDto> Fields { get; set; } = [];
+    public Guid? ZoneId { get; set; }
+    public IReadOnlyList<FieldZoneDto> Zones { get; set; } = [];
     public IReadOnlyList<BookingSlotDto> Slots { get; set; } = [];
     public PricingQuoteDto? Quote { get; set; }
     public BookingPricePreviewDto? QuotePreview { get; set; }

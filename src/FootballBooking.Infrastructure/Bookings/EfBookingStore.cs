@@ -215,6 +215,7 @@ public sealed class EfBookingStore(ApplicationDbContext dbContext) : IBookingSto
 
     private IQueryable<Field> QueryField()
         => dbContext.Fields
+            .Include(field => field.Zone)
             .Include(field => field.OperatingHours)
             .Include(field => field.Blocks)
             .Include(field => field.PricingRules);

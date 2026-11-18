@@ -20,6 +20,11 @@ public sealed class FieldConfiguration : IEntityTypeConfiguration<Field>
         builder.Property(field => field.AmenitiesJson).HasColumnType("json");
         builder.Property(field => field.Status).HasConversion<int>().IsRequired();
 
+        builder.HasOne(field => field.Zone)
+            .WithMany()
+            .HasForeignKey(field => field.ZoneId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(field => field.ZoneId);
         builder.HasIndex(field => field.Code).IsUnique();
         builder.HasIndex(field => field.Slug).IsUnique();
 

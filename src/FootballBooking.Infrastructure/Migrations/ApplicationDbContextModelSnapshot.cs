@@ -542,6 +542,9 @@ namespace FootballBooking.Infrastructure.Migrations
                     b.Property<int>("SlotStepMinutes")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ZoneId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(160)
@@ -561,12 +564,29 @@ namespace FootballBooking.Infrastructure.Migrations
                     b.HasIndex("Slug")
                         .IsUnique();
 
+                    b.HasIndex("ZoneId");
+
                     b.ToTable("Fields", null, t =>
                         {
                             t.HasCheckConstraint("CK_Fields_MinimumBookingMinutes_Positive", "MinimumBookingMinutes > 0");
 
                             t.HasCheckConstraint("CK_Fields_SlotStepMinutes_Positive", "SlotStepMinutes > 0");
                         });
+                });
+
+            modelBuilder.Entity("FootballBooking.Domain.Fields.FieldZone", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("char(36)");
+                    b.Property<string>("Code").IsRequired().HasMaxLength(20).HasColumnType("varchar(20)");
+                    b.Property<string>("Name").IsRequired().HasMaxLength(100).HasColumnType("varchar(100)");
+                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("varchar(500)");
+                    b.Property<int>("SortOrder").HasColumnType("int");
+                    b.Property<bool>("IsActive").HasColumnType("tinyint(1)");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("datetime");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("datetime");
+                    b.HasKey("Id");
+                    b.HasIndex("Code").IsUnique();
+                    b.ToTable("FieldZones");
                 });
 
             modelBuilder.Entity("FootballBooking.Domain.Fields.FieldBlock", b =>
@@ -1160,6 +1180,9 @@ namespace FootballBooking.Infrastructure.Migrations
 
             modelBuilder.Entity("FootballBooking.Domain.Fields.Field", b =>
                 {
+                    b.HasOne("FootballBooking.Domain.Fields.FieldZone", "Zone")
+                        .WithMany().HasForeignKey("ZoneId").OnDelete(DeleteBehavior.Restrict);
+                    b.Navigation("Zone");
                     b.Navigation("Blocks");
 
                     b.Navigation("Images");

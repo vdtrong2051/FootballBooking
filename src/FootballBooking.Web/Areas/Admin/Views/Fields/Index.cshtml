@@ -20,7 +20,8 @@
             <h2 class="text-2xl font-semibold text-ink">Quản lý sân</h2>
             <p class="mt-1 text-sm text-muted">Owner quản lý thông tin sân, ảnh, giờ hoạt động, bảng giá và lịch khóa sân.</p>
         </div>
-        <a class="fb-button fb-button-primary" href="/admin/fields/create">Thêm sân mới</a>
+        <div class="flex gap-2"><a class="fb-button fb-button-secondary" href="/admin/zones">Quản lý phân khu</a>
+        <a class="fb-button fb-button-primary" href="/admin/fields/create">Thêm sân mới</a></div>
     </div>
 
     @if (TempData["SuccessMessage"] is string success)
@@ -35,6 +36,7 @@
                     <tr>
                         <th>Mã</th>
                         <th>Sân</th>
+                        <th>Khu</th>
                         <th>Loại</th>
                         <th>Giá từ</th>
                         <th>Trạng thái</th>
@@ -55,6 +57,7 @@
                                     </div>
                                 </div>
                             </td>
+                            <td>@(field.ZoneName ?? "Chưa phân khu")</td>
                             <td>@field.FieldType</td>
                             <td>@FormatMoney(field.PriceFrom)</td>
                             <td><partial name="~/Views/Shared/Partials/_StatusBadge.cshtml" model='new StatusBadgeViewModel(StatusLabel(field.Status), StatusTone(field.Status))' /></td>

@@ -287,6 +287,8 @@ public sealed class BookingService(
             return BookingCommandResult.Failure(["Sân đang có thao tác đặt lịch khác. Vui lòng thử lại sau."]);
         }
 
+        // Re-read after obtaining the field/date lock: a zone may have been deactivated.
+        field = await store.GetFieldForBookingAsync(command.FieldId, cancellationToken) ?? field;
         var bookings = await store.ListBookingsForFieldDateAsync(command.FieldId, command.BookingDate, cancellationToken);
         var errors = ValidateCreateCommand(command, field, bookings);
         if (errors.Count > 0)
@@ -812,9 +814,9 @@ public sealed class BookingService(
     private List<string> ValidateAvailability(Field field, IReadOnlyList<Booking> bookings, DateOnly bookingDate, int startMinute, int endMinute, bool allowPast)
     {
         var errors = new List<string>();
-        if (field.Status != FieldStatus.Active)
+        if (field.Status != FieldStatus.Active || field.Zone is { IsActive: false })
         {
-            errors.Add("Sân hiện không nhận đặt lịch.");
+            errors.Add("Sân hoặc phân khu hiện không nhận đặt lịch.");
         }
 
         if (!IsValidInterval(startMinute, endMinute))

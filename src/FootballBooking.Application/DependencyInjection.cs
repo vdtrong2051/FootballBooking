@@ -13,6 +13,7 @@ public static class DependencyInjection
     {
         services.AddSingleton(bookingPolicy);
         services.AddScoped<IFieldService, FieldService>();
+        services.AddScoped<IFieldZoneService, FieldZoneService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IBookingService, BookingService>();
 

@@ -14,14 +14,22 @@ public sealed class BookingController(
     IBookingService bookingService,
     IFieldService fieldService,
     UserManager<ApplicationUser> userManager,
-    BookingPolicyOptions? bookingPolicy = null) : Controller
+    BookingPolicyOptions? bookingPolicy = null,
+    IFieldZoneService? zoneService = null) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute, int? durationMinutes, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(Guid? fieldId, string? date, int? startMinute,
+        int? durationMinutes, CancellationToken cancellationToken, Guid? zoneId = null)
     {
         Response.Headers.CacheControl = "no-store";
         var model = new BookingCreateViewModel();
         await PopulateCreateModelAsync(model, cancellationToken);
+        if (zoneId is not null && model.Zones.Any(x => x.Id == zoneId))
+        {
+            model.ZoneId = zoneId;
+            if (fieldId is null)
+                model.FieldId = model.Fields.FirstOrDefault(x => x.ZoneId == zoneId)?.Id ?? Guid.Empty;
+        }
         await PopulateAuthenticatedCustomerAsync(model);
         if (fieldId is not null)
         {
@@ -204,6 +212,7 @@ public sealed class BookingController(
     private async Task PopulateCreateModelAsync(BookingCreateViewModel model, CancellationToken cancellationToken)
     {
         model.Fields = await fieldService.ListPublicFieldsAsync(cancellationToken);
+        model.Zones = zoneService is null ? Array.Empty<FieldZoneDto>() : await zoneService.ListAsync(false, cancellationToken);
         await PopulateServicesAsync(model, cancellationToken);
         if (model.FieldId == Guid.Empty && model.Fields.Count > 0)
         {

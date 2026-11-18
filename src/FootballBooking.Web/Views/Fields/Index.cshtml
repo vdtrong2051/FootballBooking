@@ -10,6 +10,37 @@
     </div>
 </section>
 <section class="fb-container fb4-section">
+    <form method="get" action="/fields" class="fb4-surface mb-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div><label class="fb-label" for="ZoneId">Phân khu</label>
+            <select class="fb-input w-full" id="ZoneId" name="zoneId">
+                <option value="">Tất cả khu</option>
+                @foreach (var zone in Model.Zones)
+                { <option value="@zone.Id" selected="@(Model.ZoneId == zone.Id)">@zone.Name</option> }
+            </select></div>
+        <div><label class="fb-label" for="FieldType">Loại sân</label>
+            <select class="fb-input w-full" id="FieldType" name="fieldType">
+                <option value="">Tất cả loại</option>
+                @foreach (var type in Model.Fields.Select(x => x.FieldType).Distinct().OrderBy(x => x))
+                { <option value="@type" selected="@(Model.FieldType == type)">@type</option> }
+            </select></div>
+        <div><label class="fb-label" for="date">Ngày chơi</label><input class="fb-input w-full" id="date" name="date" type="date" value="@Model.Date" /></div>
+        <div><label class="fb-label" for="time">Giờ bắt đầu</label><input class="fb-input w-full" id="time" name="time" type="time" value="@Model.Time" step="1800" /></div>
+        <div><label class="fb-label" for="durationMinutes">Thời lượng</label>
+            <select class="fb-input w-full" id="durationMinutes" name="durationMinutes">
+                <option value="60" selected="@(Model.DurationMinutes == 60)">60 phút</option>
+                <option value="90" selected="@(Model.DurationMinutes == 90)">90 phút</option>
+                <option value="120" selected="@(Model.DurationMinutes == 120)">120 phút</option>
+            </select></div>
+        <button class="fb-button fb-button-primary lg:col-span-5" type="submit">Lọc sân trống</button>
+    </form>
+    @if (Model.ZoneCounts.Count > 0)
+    { <div class="mb-5 flex flex-wrap gap-2 text-sm">
+        @foreach (var zone in Model.Zones)
+        {
+            var summary = Model.ZoneCounts.FirstOrDefault(x => x.ZoneId == zone.Id);
+            <span class="rounded-lg border border-line px-3 py-2">@zone.Name: @(summary?.AvailableFields ?? 0)/@(summary?.TotalFields ?? 0) sân @(string.IsNullOrWhiteSpace(Model.Date) || string.IsNullOrWhiteSpace(Model.Time) ? "hoạt động" : "còn trống")</span>
+        }
+    </div> }
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3"><h2 class="text-lg font-bold text-ink">Sân đang nhận đặt</h2><p class="text-sm text-muted">@Model.Fields.Count sân</p></div>
     @if (Model.Fields.Count == 0) { <div class="fb4-surface p-8"><partial name="Partials/_EmptyState" model='new EmptyStateViewModel("Chưa có sân đang hoạt động", "Chủ sân chưa mở sân nào cho website công khai.")' /></div> }
     else { <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">@foreach (var field in Model.Fields) { <partial name="Partials/_PublicFieldCard" model="field" /> }</div> }

@@ -13,6 +13,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
 {
     public DbSet<Field> Fields => Set<Field>();
+    public DbSet<FieldZone> FieldZones => Set<FieldZone>();
     public DbSet<FieldImage> FieldImages => Set<FieldImage>();
     public DbSet<FieldOperatingHour> FieldOperatingHours => Set<FieldOperatingHour>();
     public DbSet<FieldBlock> FieldBlocks => Set<FieldBlock>();

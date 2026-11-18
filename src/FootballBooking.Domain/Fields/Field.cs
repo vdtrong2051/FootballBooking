@@ -32,6 +32,8 @@ public sealed class Field
     }
 
     public Guid Id { get; private set; }
+    public Guid? ZoneId { get; private set; }
+    public FieldZone? Zone { get; private set; }
     public string Code { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
@@ -77,6 +79,12 @@ public sealed class Field
         SlotStepMinutes = slotStepMinutes;
         Status = status;
         UpdatedAtUtc = utcNow;
+    }
+
+    public void AssignZone(Guid? zoneId, DateTimeOffset now)
+    {
+        ZoneId = zoneId;
+        UpdatedAtUtc = now;
     }
 
     public void ReplaceImages(IEnumerable<FieldImage> images)

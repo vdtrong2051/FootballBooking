@@ -9,6 +9,9 @@ public sealed class FieldFormViewModel
 {
     public Guid? Id { get; set; }
 
+    [Display(Name = "Phân khu")]
+    public Guid? ZoneId { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập mã sân.")]
     [Display(Name = "Mã sân")]
     public string Code { get; set; } = string.Empty;
@@ -65,7 +68,8 @@ public sealed class FieldFormViewModel
             Status,
             Images.Select(image => new FieldImageCommand(image.StoragePath, image.AltText, image.SortOrder, image.IsCover)).ToArray(),
             OperatingHours.Select(hour => new FieldOperatingHourCommand(hour.DayOfWeek, hour.IsClosed, hour.OpenMinute, hour.CloseMinute)).ToArray(),
-            PricingRules.Select(rule => new PricingRuleCommand(rule.Name, rule.RuleType, rule.SpecificDate, rule.DayOfWeek, rule.EffectiveFrom, rule.EffectiveTo, rule.StartMinute, rule.EndMinute, rule.PricePerHour, rule.Priority, rule.IsActive)).ToArray());
+            PricingRules.Select(rule => new PricingRuleCommand(rule.Name, rule.RuleType, rule.SpecificDate, rule.DayOfWeek, rule.EffectiveFrom, rule.EffectiveTo, rule.StartMinute, rule.EndMinute, rule.PricePerHour, rule.Priority, rule.IsActive)).ToArray(),
+            ZoneId);
 
     public static FieldFormViewModel CreateDefault()
         => new()
@@ -91,6 +95,7 @@ public sealed class FieldFormViewModel
         => new()
         {
             Id = detail.Id,
+            ZoneId = detail.ZoneId,
             Code = detail.Code,
             Name = detail.Name,
             Slug = detail.Slug,

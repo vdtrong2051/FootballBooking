@@ -1,11 +1,14 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using FootballBooking.Application.Common.Time;
+using FootballBooking.Application.Bookings;
 using FootballBooking.Domain.Fields;
 
 namespace FootballBooking.Application.Fields;
 
-public sealed class FieldService(IFieldStore store, ISystemClock clock) : IFieldService
+public sealed class FieldService(IFieldStore store, ISystemClock clock,
+    IFieldZoneStore? zoneStore = null, IBookingStore? bookingStore = null,
+    IBookingWriteLock? writeLock = null) : IFieldService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -49,6 +52,7 @@ public sealed class FieldService(IFieldStore store, ISystemClock clock) : IField
             command.Status,
             now);
 
+        field.AssignZone(command.ZoneId, now);
         ReplaceChildren(field, command, fieldId, now);
 
         await store.AddFieldAsync(field, cancellationToken);
@@ -85,6 +89,7 @@ public sealed class FieldService(IFieldStore store, ISystemClock clock) : IField
             command.SlotStepMinutes,
             command.Status,
             now);
+        field.AssignZone(command.ZoneId, now);
         ReplaceChildren(field, command, fieldId, now);
 
         await store.SaveChangesAsync(cancellationToken);
@@ -94,17 +99,25 @@ public sealed class FieldService(IFieldStore store, ISystemClock clock) : IField
 
     public async Task<FieldCommandResult> AddBlockAsync(FieldBlockCommand command, CancellationToken cancellationToken = default)
     {
-        var field = await store.GetFieldForUpdateAsync(command.FieldId, cancellationToken);
-        if (field is null)
-        {
-            return FieldCommandResult.Failure(["Không tìm thấy sân cần khóa lịch."]);
-        }
-
         var errors = ValidateBlock(command);
-        if (errors.Count > 0)
-        {
-            return FieldCommandResult.Failure(errors);
-        }
+        if (errors.Count > 0) return FieldCommandResult.Failure(errors);
+        if (bookingStore is null || writeLock is null)
+            return FieldCommandResult.Failure(["Không thể kiểm tra lịch booking để khóa sân an toàn."]);
+
+        // GĐ5-C: same MySQL field/date lock as BookingService.CreateBookingAsync.
+        await using var guard = await writeLock.TryAcquireAsync(command.FieldId,
+            command.BlockDate, TimeSpan.FromSeconds(5), cancellationToken);
+        if (guard is null) return FieldCommandResult.Failure(["Sân đang có thao tác đặt lịch khác."]);
+        var field = await store.GetFieldForUpdateAsync(command.FieldId, cancellationToken);
+        if (field is null) return FieldCommandResult.Failure(["Không tìm thấy sân cần khóa lịch."]);
+        if (field.Blocks.Any(x => x.BlockDate == command.BlockDate
+            && command.StartMinute < x.EndMinute && command.EndMinute > x.StartMinute))
+            return FieldCommandResult.Failure(["Khung giờ đã có lịch khóa sân khác."]);
+        var bookings = await bookingStore.ListBookingsForFieldDateAsync(
+            command.FieldId, command.BlockDate, cancellationToken);
+        if (bookings.Any(x => x.BlocksAvailability(clock.UtcNow)
+            && x.Overlaps(command.BlockDate, command.StartMinute, command.EndMinute)))
+            return FieldCommandResult.Failure(["Khung giờ đang có booking; không thể khóa sân khi chưa xử lý booking hiện hữu."]);
 
         field.AddBlock(new FieldBlock(
             Guid.NewGuid(),
@@ -177,6 +190,11 @@ public sealed class FieldService(IFieldStore store, ISystemClock clock) : IField
         {
             errors.Add("Đường dẫn công khai đã tồn tại.");
         }
+
+        if (command.ZoneId is null || command.ZoneId == Guid.Empty)
+            errors.Add("Vui lòng chọn phân khu cho sân.");
+        else if (zoneStore is null || !await zoneStore.IsActiveAsync(command.ZoneId.Value, cancellationToken))
+            errors.Add("Phân khu không tồn tại hoặc đã ngừng nhận đặt.");
 
         ValidateImages(command.Images, errors);
         ValidateOperatingHours(command.OperatingHours, errors);

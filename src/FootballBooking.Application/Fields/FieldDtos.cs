@@ -14,7 +14,8 @@ public sealed record FieldSummaryDto(
     string? CoverImagePath,
     string? CoverImageAltText,
     long? PriceFrom,
-    IReadOnlyList<string> Amenities);
+    IReadOnlyList<string> Amenities,
+    Guid? ZoneId = null, string? ZoneName = null);
 
 public sealed record FieldImageDto(string StoragePath, string? AltText, int SortOrder, bool IsCover);
 
@@ -58,4 +59,5 @@ public sealed record FieldDetailDto(
     IReadOnlyList<FieldImageDto> Images,
     IReadOnlyList<FieldOperatingHourDto> OperatingHours,
     IReadOnlyList<PricingRuleDto> PricingRules,
-    IReadOnlyList<FieldBlockDto> Blocks);
+    IReadOnlyList<FieldBlockDto> Blocks,
+    Guid? ZoneId = null, string? ZoneName = null);

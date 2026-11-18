@@ -1,5 +1,6 @@
 @model FieldFormViewModel
 @using FootballBooking.Domain.Fields
+@{ var zones = ViewData["Zones"] as IReadOnlyList<FootballBooking.Application.Fields.FieldZoneDto> ?? []; }
 
 @functions {
     private static string TimeValue(int? minute) => minute is null ? string.Empty : $"{minute.Value / 60:00}:{minute.Value % 60:00}";
@@ -39,6 +40,16 @@
             <div><label asp-for="Name" class="fb-label"></label><input asp-for="Name" class="fb-input" /><span asp-validation-for="Name" class="text-xs text-red-700"></span></div>
             <div><label asp-for="Slug" class="fb-label"></label><input asp-for="Slug" class="fb-input" /><span asp-validation-for="Slug" class="text-xs text-red-700"></span></div>
             <div><label asp-for="FieldType" class="fb-label"></label><input asp-for="FieldType" class="fb-input" /></div>
+            <div>
+                <label asp-for="ZoneId" class="fb-label"></label>
+                <select asp-for="ZoneId" class="fb-input" required>
+                    <option value="">-- Chọn phân khu --</option>
+                    @foreach (var zone in zones.Where(x => x.IsActive || x.Id == Model.ZoneId))
+                    {
+                        <option value="@zone.Id">@zone.Code - @zone.Name @(zone.IsActive ? "" : "(ngừng nhận đặt)")</option>
+                    }
+                </select>
+            </div>
             <div><label asp-for="Capacity" class="fb-label"></label><input asp-for="Capacity" class="fb-input" type="number" min="1" /></div>
             <div>
                 <label asp-for="Status" class="fb-label"></label>

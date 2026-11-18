@@ -8,6 +8,7 @@
         new { Group = "Vận hành", Label = "Lịch đặt sân", Url = "/admin/bookings", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageSchedule) },
         new { Group = "Vận hành", Label = "Thanh toán", Url = "/admin/payments", Icon = "credit-card", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManagePayments) },
         new { Group = "Danh mục", Label = "Quản lý sân", Url = "/admin/fields", Icon = "building-office", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
+        new { Group = "Danh mục", Label = "Phân khu sân", Url = "/admin/zones", Icon = "building-office", Visible = isOwner },
         new { Group = "Danh mục", Label = "Dịch vụ", Url = "/admin/services", Icon = "clipboard-document-list", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
         new { Group = "Danh mục", Label = "Khuyến mãi", Url = "/admin/promotions", Icon = "tag", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ManageCatalog) },
         new { Group = "Phân tích & nhân sự", Label = "Báo cáo", Url = "/admin/reports", Icon = "chart-bar", Visible = StaffPermissions.HasPermission(User, StaffPermissions.ViewReports) },

@@ -64,6 +64,7 @@
         <div class="fb-card p-4">
             <h3 class="font-semibold text-ink">Thông tin vận hành</h3>
             <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                <div><dt class="text-muted">Phân khu</dt><dd class="mt-1 font-medium text-ink">@(Model.ZoneName ?? "Chưa phân khu")</dd></div>
                 <div><dt class="text-muted">Địa chỉ</dt><dd class="mt-1 font-medium text-ink">@Model.Address</dd></div>
                 <div><dt class="text-muted">Sức chứa</dt><dd class="mt-1 font-medium text-ink">@Model.Capacity người</dd></div>
                 <div><dt class="text-muted">Đặt tối thiểu</dt><dd class="mt-1 font-medium text-ink">@Model.MinimumBookingMinutes phút</dd></div>

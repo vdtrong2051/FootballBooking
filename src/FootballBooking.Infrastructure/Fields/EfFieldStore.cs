@@ -11,7 +11,7 @@ public sealed class EfFieldStore(ApplicationDbContext dbContext) : IFieldStore
     public async Task<IReadOnlyList<FieldSummaryDto>> ListPublicFieldsAsync(CancellationToken cancellationToken)
     {
         var fields = await QueryFields()
-            .Where(field => field.Status == FieldStatus.Active)
+            .Where(field => field.Status == FieldStatus.Active && (field.ZoneId == null || field.Zone!.IsActive))
             .OrderBy(field => field.Name)
             .ToListAsync(cancellationToken);
 
@@ -45,6 +45,7 @@ public sealed class EfFieldStore(ApplicationDbContext dbContext) : IFieldStore
 
     public Task<Field?> GetFieldForUpdateAsync(Guid id, CancellationToken cancellationToken)
         => dbContext.Fields
+            .Include(field => field.Zone)
             .Include(field => field.Images)
             .Include(field => field.OperatingHours)
             .Include(field => field.Blocks)
@@ -70,6 +71,7 @@ public sealed class EfFieldStore(ApplicationDbContext dbContext) : IFieldStore
     private IQueryable<Field> QueryFields()
         => dbContext.Fields
             .AsNoTracking()
+            .Include(field => field.Zone)
             .Include(field => field.Images)
             .Include(field => field.OperatingHours)
             .Include(field => field.Blocks)
@@ -96,7 +98,7 @@ public sealed class EfFieldStore(ApplicationDbContext dbContext) : IFieldStore
             cover?.StoragePath,
             cover?.AltText,
             priceFrom,
-            ParseAmenities(field.AmenitiesJson));
+            ParseAmenities(field.AmenitiesJson), field.ZoneId, field.Zone?.Name);
     }
 
     private static FieldDetailDto ToDetailDto(Field field)
@@ -116,7 +118,8 @@ public sealed class EfFieldStore(ApplicationDbContext dbContext) : IFieldStore
             field.Images.OrderBy(image => image.SortOrder).Select(image => new FieldImageDto(image.StoragePath, image.AltText, image.SortOrder, image.IsCover)).ToArray(),
             field.OperatingHours.OrderBy(hour => hour.DayOfWeek).Select(hour => new FieldOperatingHourDto(hour.DayOfWeek, hour.IsClosed, hour.OpenMinute, hour.CloseMinute)).ToArray(),
             field.PricingRules.OrderBy(rule => rule.StartMinute).Select(rule => new PricingRuleDto(rule.Id, rule.Name, rule.RuleType, rule.SpecificDate, rule.DayOfWeek, rule.EffectiveFrom, rule.EffectiveTo, rule.StartMinute, rule.EndMinute, rule.PricePerHour, rule.Priority, rule.IsActive)).ToArray(),
-            field.Blocks.OrderByDescending(block => block.BlockDate).ThenBy(block => block.StartMinute).Select(block => new FieldBlockDto(block.Id, block.BlockDate, block.StartMinute, block.EndMinute, block.BlockType, block.Reason)).ToArray());
+            field.Blocks.OrderByDescending(block => block.BlockDate).ThenBy(block => block.StartMinute).Select(block => new FieldBlockDto(block.Id, block.BlockDate, block.StartMinute, block.EndMinute, block.BlockType, block.Reason)).ToArray(),
+            field.ZoneId, field.Zone?.Name);
 
     private static IReadOnlyList<string> ParseAmenities(string? amenitiesJson)
     {
